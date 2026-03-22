@@ -1,4 +1,4 @@
-name: Win7_Serveo_Port_Operasyonu
+name: Win7_Kesin_Port_Poligonu
 
 on: workflow_dispatch 
 
@@ -13,14 +13,17 @@ jobs:
           sudo pip3 install gdown
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared-linux-amd64.deb
+          # Bore'u tekrar indiriyoruz (En stabil TCP tüneli)
+          wget -q https://github.com/ekzhang/bore/releases/download/v0.4.1/bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
+          tar -xzf bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
 
       - name: 2. Hazır Kurbanı Drive'dan İndir
         run: |
           gdown --id "14PZmQ-yUlfNWo8djcjzxuBOH0nxo6Ms5" -O kurban_disk.qcow2
 
-      - name: 3. Motorları Ateşle ve Serveo Köprüsünü Kur
+      - name: 3. Motorları Ateşle ve "Bore" Köprüsünü Kur
         run: |
-          # 1. QEMU: Windows 445 -> GitHub 4445
+          # 1. QEMU: Windows 445 -> GitHub 4445 (Sızma Portu)
           sudo qemu-system-i386 -m 4G -cpu core2duo -smp 2 -drive file=kurban_disk.qcow2,format=qcow2 -boot c -vnc :1 -net nic,model=virtio -net user,hostfwd=tcp::4445-:445 &
           
           # 2. VNC Ekranı (Cloudflare)
@@ -28,30 +31,22 @@ jobs:
           sleep 5
           cloudflared tunnel --url http://localhost:6080 > vnc.log 2>&1 &
           
-          # 3. SERVEO TCP TÜNELİ: 4445 portunu dünyaya açıyoruz
-          # Serveo'ya "bana rastgele bir TCP portu ver" diyoruz.
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 0:localhost:4445 serveo.net > serveo.log 2>&1 &
+          # 3. BORE TCP TÜNELİ: GitHub 4445'i dünyaya açıyoruz
+          ./bore local 4445 --to bore.pub > bore.log 2>&1 &
           
-          # Serveo'nun port ataması için 20 saniye bekleyelim
+          # Tünelin oturması için 20 saniye bekleyelim
           sleep 20
           
           echo "================================================================"
-          echo "🔥 SİBER KÖPRÜ (SERVEO) AKTİF!"
+          echo "🔥 SİBER OPERASYON MERKEZİ"
           VNC_URL=$(cat vnc.log | grep -o 'https://.*\.trycloudflare\.com' | head -n 1)
           echo "🖥️ EKRAN LİNKİ: ${VNC_URL}/vnc.html"
           
-          echo "--- SERVEO ADRES TESPİTİ ---"
-          # Serveo'nun logundan 'Forwarding TCP connections from' satırını yakalıyoruz
-          SERVEO_ADDR=$(grep -o "serveo.net:[0-9]*" serveo.log | head -n 1)
-          
-          if [ -z "$SERVEO_ADDR" ]; then
-            echo "⚠️ ADRES YAKALANAMADI! SERVEO LOGUNA BAKIN:"
-            cat serveo.log
-          else
-            echo "💣 METASPLOIT HEDEFİ (RHOST:RPORT): $SERVEO_ADDR"
-          fi
+          echo "--- BORE SALDIRI HEDEFİ ---"
+          # Logun tamamını ekrana basıyoruz ki kaçacak yer kalmasın!
+          cat bore.log
           echo "================================================================"
 
       - name: 4. Hedefi Hayatta Tut
         run: |
-          while true; do sleep 300; echo "Tünel aktif, mermiler havada..."; done
+          while true; do sleep 300; echo "Siber hatlar meşgul, Windows ayakta..."; done
