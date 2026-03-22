@@ -15,10 +15,14 @@ jobs:
           wget -q https://github.com/ekzhang/bore/releases/download/v0.4.1/bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
           tar -xzf bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
 
-      - name: 2. Hazır Kurbanı Drive'dan İndir
+      - name: 2. Hazır Kurbanı Drive'dan İndir (Wget Bypass)
         run: |
-          gdown --id "14PZmQ-yUlfNWo8djcjzxuBOH0nxo6Ms5" -O kurban_disk.qcow2
-
+          # Google Drive büyük dosya onayını bypass eden siber komut:
+          FILE_ID="14PZmQ-yUlfNWo8djcjzxuBOH0nxo6Ms5"
+          CONFIRM=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate "https://docs.google.com/uc?export=download&id=$FILE_ID" -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')
+          wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$CONFIRM&id=$FILE_ID" -O kurban_disk.qcow2
+          rm -rf /tmp/cookies.txt
+          
       - name: 3. Turbo Motorları Ateşle
         run: |
           # DİKKAT: -vga virtio (Hızlı Görüntü) ve -smp 4 (Daha fazla çekirdek) ekledik
