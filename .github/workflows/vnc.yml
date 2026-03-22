@@ -1,4 +1,4 @@
-name: Win7_Hazir_Kurban_Poligonu
+name: Win7_Direkt_Port_Poligonu
 
 on: workflow_dispatch 
 
@@ -13,39 +13,37 @@ jobs:
           sudo pip3 install gdown
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared-linux-amd64.deb
-          # TCP Tüneli için Bore'u indiriyoruz:
-          wget -q https://github.com/ekzhang/bore/releases/download/v0.4.1/bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
-          tar -xzf bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
 
-      - name: 2. Hazır Kurbanı Drive'dan İndir (Kurulum Yok!)
+      - name: 2. Hazır Kurbanı Drive'dan İndir
         run: |
-          # Gdown, Google'ın "bu dosya büyük, virüs taraması yapılamıyor" uyarısını otomatik aşar.
           gdown --id "14PZmQ-yUlfNWo8djcjzxuBOH0nxo6Ms5" -O kurban_disk.qcow2
 
-      - name: 3. Motorları Ateşle ve Ölümcül Portları Aç!
+      - name: 3. Motorları Ateşle ve Portu Dünyaya Aç
         run: |
-          # KRİTİK EKLENTİ: -net user kısmına "hostfwd" ekledik. Kurbanın 445 portunu, dışarıya 4445 olarak bağlıyoruz.
+          # 1. QEMU: Windows'un 445 portunu, GitHub makinesinde 4445'e bağlıyoruz
           sudo qemu-system-i386 -m 4G -cpu core2duo -smp 2 -drive file=kurban_disk.qcow2,format=qcow2 -boot c -vnc :1 -net nic,model=virtio -net user,hostfwd=tcp::4445-:445 &
+          
+          # 2. VNC Ekranı (Tıklayıp izlemek için)
           websockify --web /usr/share/novnc/ 6080 localhost:5901 &
           sleep 5
+          cloudflared tunnel --url http://localhost:6080 > vnc_tunnel.log 2>&1 &
           
-          # 1. Tünel: Ekran İçin (Cloudflare)
-          cloudflared tunnel --url http://localhost:6080 > tunnel.log 2>&1 &
+          # 3. KRİTİK ADIM: SSH ile Portu Dışarı Aktarma (Localhost.run kullanıyoruz)
+          # Bu komut GitHub'daki 4445'i internete açar ve sana bir adres verir.
+          ssh -o StrictHostKeyChecking=no -R 80:localhost:4445 nokey@localhost.run > port_tunnel.log 2>&1 &
           
-          # 2. Tünel: Sızma Testi (SMB 445) İçin TCP Tüneli (Bore)
-          ./bore local 4445 --to bore.pub > bore.log 2>&1 &
-          
-          sleep 10
+          sleep 15
           echo "================================================================"
-          echo "🔥 SİBER KÖPRÜ VE SALDIRI PORTLARI AÇILDI!"
-          VNC_URL=$(cat tunnel.log | grep -o 'https://.*\.trycloudflare\.com' | head -n 1)
+          echo "🔥 SİBER KAPI ARALANDI!"
+          VNC_URL=$(cat vnc_tunnel.log | grep -o 'https://.*\.trycloudflare\.com' | head -n 1)
           echo "🖥️ EKRAN LİNKİ: ${VNC_URL}/vnc.html"
           
-          # Bore logundan bize verilen özel saldırı hedefini yakalıyoruz
-          BORE_ADDRESS=$(grep -oE 'bore\.pub:[0-9]+' bore.log | head -n 1)
-          echo "💣 METASPLOIT İÇİN HEDEF (RHOST ve RPORT): ${BORE_ADDRESS}"
+          # Tünel adresini logdan çekiyoruz
+          TUNNEL_ADDR=$(cat port_tunnel.log | grep -oE '[a-zA-Z0-9.-]+\.lhr\.life' | head -n 1)
+          echo "💣 METASPLOIT HEDEFİ (RHOST): ${TUNNEL_ADDR}"
+          echo "💣 METASPLOIT PORTU (RPORT): 80"
           echo "================================================================"
 
       - name: 4. Hedefi Hayatta Tut
         run: |
-          while true; do sleep 300; echo "Poligon aktif, hedef tetikte..."; done
+          while true; do sleep 300; echo "Tünel aktif, mermiler havada..."; done
