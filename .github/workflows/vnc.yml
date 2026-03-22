@@ -1,4 +1,4 @@
-name: Win7_Pinggy_Port_Operasyonu
+name: Win7_Serveo_Port_Operasyonu
 
 on: workflow_dispatch 
 
@@ -18,7 +18,7 @@ jobs:
         run: |
           gdown --id "14PZmQ-yUlfNWo8djcjzxuBOH0nxo6Ms5" -O kurban_disk.qcow2
 
-      - name: 3. Motorları Ateşle ve Pinggy Köprüsünü Kur
+      - name: 3. Motorları Ateşle ve Serveo Köprüsünü Kur
         run: |
           # 1. QEMU: Windows 445 -> GitHub 4445
           sudo qemu-system-i386 -m 4G -cpu core2duo -smp 2 -drive file=kurban_disk.qcow2,format=qcow2 -boot c -vnc :1 -net nic,model=virtio -net user,hostfwd=tcp::4445-:445 &
@@ -28,32 +28,30 @@ jobs:
           sleep 5
           cloudflared tunnel --url http://localhost:6080 > vnc.log 2>&1 &
           
-          # 3. PINGGY TCP TÜNELİ: SSH bağlantısını başlatıyoruz
-          # -T parametresi interaktif terminali devre dışı bırakır, log yazmayı kolaylaştırır.
-          ssh -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -R0:localhost:4445 tcp@pinggy.io > pinggy.log 2>&1 &
+          # 3. SERVEO TCP TÜNELİ: 4445 portunu dünyaya açıyoruz
+          # Serveo'ya "bana rastgele bir TCP portu ver" diyoruz.
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 0:localhost:4445 serveo.net > serveo.log 2>&1 &
           
-          # Adresin atanması için süreyi 25 saniyeye çıkardık.
-          sleep 25
+          # Serveo'nun port ataması için 20 saniye bekleyelim
+          sleep 20
           
           echo "================================================================"
-          echo "🔥 SİBER KÖPRÜ RAPORU"
+          echo "🔥 SİBER KÖPRÜ (SERVEO) AKTİF!"
           VNC_URL=$(cat vnc.log | grep -o 'https://.*\.trycloudflare\.com' | head -n 1)
           echo "🖥️ EKRAN LİNKİ: ${VNC_URL}/vnc.html"
           
-          echo "--- PINGGY ADRES TESPİTİ ---"
-          # Logun içinden tcp:// kısmını çekmeye çalışıyoruz
-          PINGGY_RAW=$(grep -oE "tcp://[a-z0-9.-]+:[0-9]+" pinggy.log | head -n 1)
+          echo "--- SERVEO ADRES TESPİTİ ---"
+          # Serveo'nun logundan 'Forwarding TCP connections from' satırını yakalıyoruz
+          SERVEO_ADDR=$(grep -o "serveo.net:[0-9]*" serveo.log | head -n 1)
           
-          if [ -z "$PINGGY_RAW" ]; then
-            echo "⚠️ OTOMATİK TESPİT BAŞARISIZ! LÜTFEN AŞAĞIDAKİ LOGDAN MANUEL BAKIN:"
-            echo "------------------------------------------------"
-            cat pinggy.log
-            echo "------------------------------------------------"
+          if [ -z "$SERVEO_ADDR" ]; then
+            echo "⚠️ ADRES YAKALANAMADI! SERVEO LOGUNA BAKIN:"
+            cat serveo.log
           else
-            echo "💣 METASPLOIT HEDEFİ (RHOST:RPORT): $PINGGY_RAW"
+            echo "💣 METASPLOIT HEDEFİ (RHOST:RPORT): $SERVEO_ADDR"
           fi
           echo "================================================================"
 
       - name: 4. Hedefi Hayatta Tut
         run: |
-          while true; do sleep 300; echo "Tünel aktif, mermiler namluda..."; done
+          while true; do sleep 300; echo "Tünel aktif, mermiler havada..."; done
