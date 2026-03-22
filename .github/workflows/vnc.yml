@@ -1,4 +1,4 @@
-name: Win7_Kesin_Port_Poligonu
+name: Win7_Turbo_VNC_Poligonu
 
 on: workflow_dispatch 
 
@@ -9,11 +9,9 @@ jobs:
       - name: 1. Siber Cephaneliği Kur
         run: |
           sudo apt-get update -qq
-          sudo apt-get install qemu-system-x86 novnc websockify python3-pip -y -qq
+          sudo apt-get install qemu-system-x86 python3-pip -y -qq
           sudo pip3 install gdown
-          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-          sudo dpkg -i cloudflared-linux-amd64.deb
-          # Bore'u tekrar indiriyoruz (En stabil TCP tüneli)
+          # Bore'u indiriyoruz (Hem VNC hem Saldırı portu için)
           wget -q https://github.com/ekzhang/bore/releases/download/v0.4.1/bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
           tar -xzf bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
 
@@ -21,32 +19,30 @@ jobs:
         run: |
           gdown --id "14PZmQ-yUlfNWo8djcjzxuBOH0nxo6Ms5" -O kurban_disk.qcow2
 
-      - name: 3. Motorları Ateşle ve "Bore" Köprüsünü Kur
+      - name: 3. Turbo Motorları Ateşle
         run: |
-          # 1. QEMU: Windows 445 -> GitHub 4445 (Sızma Portu)
-          sudo qemu-system-i386 -m 4G -cpu core2duo -smp 2 -drive file=kurban_disk.qcow2,format=qcow2 -boot c -vnc :1 -net nic,model=virtio -net user,hostfwd=tcp::4445-:445 &
+          # DİKKAT: -vga virtio (Hızlı Görüntü) ve -smp 4 (Daha fazla çekirdek) ekledik
+          sudo qemu-system-i386 -m 4G -cpu core2duo -smp 4 -vga virtio -display vnc=:1 -drive file=kurban_disk.qcow2,format=qcow2 -boot c -net nic,model=virtio -net user,hostfwd=tcp::4445-:445 &
           
-          # 2. VNC Ekranı (Cloudflare)
-          websockify --web /usr/share/novnc/ 6080 localhost:5901 &
           sleep 5
-          cloudflared tunnel --url http://localhost:6080 > vnc.log 2>&1 &
           
-          # 3. BORE TCP TÜNELİ: GitHub 4445'i dünyaya açıyoruz
-          ./bore local 4445 --to bore.pub > bore.log 2>&1 &
+          # 1. Tünel: GÖRÜNTÜ İÇİN (VNC Portu 5901'i Bore üzerinden açıyoruz)
+          ./bore local 5901 --to bore.pub > vnc_bore.log 2>&1 &
           
-          # Tünelin oturması için 20 saniye bekleyelim
-          sleep 20
+          # 2. Tünel: SALDIRI İÇİN (SMB Portu 4445'i Bore üzerinden açıyoruz)
+          ./bore local 4445 --to bore.pub > attack_bore.log 2>&1 &
           
+          sleep 15
           echo "================================================================"
-          echo "🔥 SİBER OPERASYON MERKEZİ"
-          VNC_URL=$(cat vnc.log | grep -o 'https://.*\.trycloudflare\.com' | head -n 1)
-          echo "🖥️ EKRAN LİNKİ: ${VNC_URL}/vnc.html"
+          echo "⚡ TURBO VNC VE SALDIRI HATTI AKTİF!"
           
-          echo "--- BORE SALDIRI HEDEFİ ---"
-          # Logun tamamını ekrana basıyoruz ki kaçacak yer kalmasın!
-          cat bore.log
+          VNC_ADDR=$(grep -oE 'bore\.pub:[0-9]+' vnc_bore.log | head -n 1)
+          echo "🖥️ VNC BAĞLANTI ADRESİ: ${VNC_ADDR}"
+          
+          ATTACK_ADDR=$(grep -oE 'bore\.pub:[0-9]+' attack_bore.log | head -n 1)
+          echo "💣 METASPLOIT HEDEFİ: ${ATTACK_ADDR}"
           echo "================================================================"
 
       - name: 4. Hedefi Hayatta Tut
         run: |
-          while true; do sleep 300; echo "Siber hatlar meşgul, Windows ayakta..."; done
+          while true; do sleep 300; echo "Sistem uçuşta, poligon aktif..."; done
