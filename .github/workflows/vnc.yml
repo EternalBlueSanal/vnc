@@ -1,4 +1,24 @@
-- name: 3. Motorları Ateşle ve Pinggy Köprüsünü Kur
+name: Win7_Pinggy_Port_Operasyonu
+
+on: workflow_dispatch 
+
+jobs:
+  Hacker_Mevzisi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Siber Cephaneliği Kur
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install qemu-system-x86 novnc websockify python3-pip -y -qq
+          sudo pip3 install gdown
+          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared-linux-amd64.deb
+
+      - name: 2. Hazır Kurbanı Drive'dan İndir
+        run: |
+          gdown --id "14PZmQ-yUlfNWo8djcjzxuBOH0nxo6Ms5" -O kurban_disk.qcow2
+
+      - name: 3. Motorları Ateşle ve Pinggy Köprüsünü Kur
         run: |
           # 1. QEMU: Windows 445 -> GitHub 4445
           sudo qemu-system-i386 -m 4G -cpu core2duo -smp 2 -drive file=kurban_disk.qcow2,format=qcow2 -boot c -vnc :1 -net nic,model=virtio -net user,hostfwd=tcp::4445-:445 &
@@ -8,18 +28,32 @@
           sleep 5
           cloudflared tunnel --url http://localhost:6080 > vnc.log 2>&1 &
           
-          # 3. PINGGY TCP TÜNELİ: Daha uzun bekleme ve tam log basma
-          # SSH bağlantısını başlatıyoruz
+          # 3. PINGGY TCP TÜNELİ: SSH bağlantısını başlatıyoruz
+          # -T parametresi interaktif terminali devre dışı bırakır, log yazmayı kolaylaştırır.
           ssh -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -R0:localhost:4445 tcp@pinggy.io > pinggy.log 2>&1 &
           
-          # Pinggy'nin adresi ataması için biraz daha fazla zaman veriyoruz (20 sn)
-          sleep 20
+          # Adresin atanması için süreyi 25 saniyeye çıkardık.
+          sleep 25
           
           echo "================================================================"
           echo "🔥 SİBER KÖPRÜ RAPORU"
           VNC_URL=$(cat vnc.log | grep -o 'https://.*\.trycloudflare\.com' | head -n 1)
           echo "🖥️ EKRAN LİNKİ: ${VNC_URL}/vnc.html"
           
-          echo "--- PINGGY HAM LOG ÇIKTISI (ADRES BURADA YAZAR) ---"
-          cat pinggy.log | grep -i "tcp://" || echo "⚠️ Adres henüz atanmadı, logu kontrol et!"
+          echo "--- PINGGY ADRES TESPİTİ ---"
+          # Logun içinden tcp:// kısmını çekmeye çalışıyoruz
+          PINGGY_RAW=$(grep -oE "tcp://[a-z0-9.-]+:[0-9]+" pinggy.log | head -n 1)
+          
+          if [ -z "$PINGGY_RAW" ]; then
+            echo "⚠️ OTOMATİK TESPİT BAŞARISIZ! LÜTFEN AŞAĞIDAKİ LOGDAN MANUEL BAKIN:"
+            echo "------------------------------------------------"
+            cat pinggy.log
+            echo "------------------------------------------------"
+          else
+            echo "💣 METASPLOIT HEDEFİ (RHOST:RPORT): $PINGGY_RAW"
+          fi
           echo "================================================================"
+
+      - name: 4. Hedefi Hayatta Tut
+        run: |
+          while true; do sleep 300; echo "Tünel aktif, mermiler namluda..."; done
