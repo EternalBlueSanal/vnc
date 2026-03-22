@@ -1,0 +1,38 @@
+name: Win7_Siber_Poligon
+
+# Sadece biz butona bastığımızda çalışması için:
+on: workflow_dispatch 
+
+jobs:
+  Hacker_Mevzisi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Siber Cephaneliği Kur (Ngrok Yasaklı)
+        run: |
+          sudo apt-get update
+          sudo apt-get install qemu-system-x86 novnc websockify aria2 -y
+          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared-linux-amd64.deb
+
+      - name: 2. Kurban ISO'sunu Çek (Aria2 ile)
+        run: aria2c -x 16 -s 16 "https://ia801509.us.archive.org/32/items/win7-pro-sp1-turkish/Win7_Pro_SP1_Turkish_x32.iso" -o win7.iso
+
+      - name: 3. Sanal Diski Formatla
+        run: qemu-img create -f qcow2 kurban.qcow2 25G
+
+      - name: 4. Motorları Ateşle ve Görünmez Tüneli Kaz
+        run: |
+          sudo qemu-system-i386 -m 4G -cpu core2duo -smp 2 -drive file=kurban.qcow2,format=qcow2 -cdrom win7.iso -boot d -vnc :1 -net nic,model=virtio -net user &
+          websockify --web /usr/share/novnc/ 6080 localhost:5901 &
+          sleep 5
+          cloudflared tunnel --url http://localhost:6080 > tunnel.log 2>&1 &
+          sleep 10
+          echo "================================================================"
+          echo "🔥 SİBER KÖPRÜ BAŞARIYLA KURULDU!"
+          URL=$(cat tunnel.log | grep -o 'https://.*\.trycloudflare\.com' | head -n 1)
+          echo "🔗 TIKLA VE BAĞLAN: ${URL}/vnc.html"
+          echo "================================================================"
+
+      - name: 5. Hedefi Hayatta Tut (Kapanmaması İçin Döngü)
+        run: |
+          while true; do sleep 300; echo "Poligon aktif, siber hedef bekliyor..."; done
