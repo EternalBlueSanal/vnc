@@ -10,29 +10,42 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install qemu-system-x86 novnc websockify python3-pip -y -qq
-          sudo pip3 install gdown # Drive'dan büyük dosya çekmek için özel araç
+          sudo pip3 install gdown
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared-linux-amd64.deb
+          # TCP Tüneli için Bore'u indiriyoruz:
+          wget -q https://github.com/ekzhang/bore/releases/download/v0.4.1/bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
+          tar -xzf bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
 
       - name: 2. Hazır Kurbanı Drive'dan İndir (Kurulum Yok!)
         run: |
           # Gdown, Google'ın "bu dosya büyük, virüs taraması yapılamıyor" uyarısını otomatik aşar.
           gdown --id "14PZmQ-yUlfNWo8djcjzxuBOH0nxo6Ms5" -O kurban_disk.qcow2
 
-      - name: 3. Motorları Ateşle ve Görünmez Tüneli Kaz
+      - name: 3. Motorları Ateşle ve Ölümcül Portları Aç!
         run: |
-          # DİKKAT: -cdrom parametresini sildik ve -boot c (Harddiskten başla) yaptık!
-          sudo qemu-system-i386 -m 4G -cpu core2duo -smp 2 -drive file=kurban_disk.qcow2,format=qcow2 -boot c -vnc :1 -net nic,model=virtio -net user &
+          # KRİTİK EKLENTİ: -net user kısmına "hostfwd" ekledik. Kurbanın 445 portunu, dışarıya 4445 olarak bağlıyoruz.
+          sudo qemu-system-i386 -m 4G -cpu core2duo -smp 2 -drive file=kurban_disk.qcow2,format=qcow2 -boot c -vnc :1 -net nic,model=virtio -net user,hostfwd=tcp::4445-:445 &
           websockify --web /usr/share/novnc/ 6080 localhost:5901 &
           sleep 5
+          
+          # 1. Tünel: Ekran İçin (Cloudflare)
           cloudflared tunnel --url http://localhost:6080 > tunnel.log 2>&1 &
+          
+          # 2. Tünel: Sızma Testi (SMB 445) İçin TCP Tüneli (Bore)
+          ./bore local 4445 --to bore.pub > bore.log 2>&1 &
+          
           sleep 10
           echo "================================================================"
-          echo "🔥 SİBER KÖPRÜ (HAZIR İMAJ) BAŞARIYLA KURULDU!"
-          URL=$(cat tunnel.log | grep -o 'https://.*\.trycloudflare\.com' | head -n 1)
-          echo "🔗 TIKLA VE BAĞLAN: ${URL}/vnc.html"
+          echo "🔥 SİBER KÖPRÜ VE SALDIRI PORTLARI AÇILDI!"
+          VNC_URL=$(cat tunnel.log | grep -o 'https://.*\.trycloudflare\.com' | head -n 1)
+          echo "🖥️ EKRAN LİNKİ: ${VNC_URL}/vnc.html"
+          
+          # Bore logundan bize verilen özel saldırı hedefini yakalıyoruz
+          BORE_ADDRESS=$(grep -oE 'bore\.pub:[0-9]+' bore.log | head -n 1)
+          echo "💣 METASPLOIT İÇİN HEDEF (RHOST ve RPORT): ${BORE_ADDRESS}"
           echo "================================================================"
 
       - name: 4. Hedefi Hayatta Tut
         run: |
-          while true; do sleep 300; echo "Poligon aktif, Windows 7 ayakta..."; done
+          while true; do sleep 300; echo "Poligon aktif, hedef tetikte..."; done
