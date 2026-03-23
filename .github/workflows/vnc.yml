@@ -18,7 +18,7 @@ jobs:
       - name: 2. Hazır Kurbanı Drive'dan İndir (Kurulum Yok!)
         run: |
           # İndirme adımın dokunulmadan aynen korundu
-          gdown --id "1xz4LdlcVc5l_Cxh93YLYgBYE-mzweont" -O kurban_disk.qcow2
+          gdown --id "1eKZQu8NEMgP5TsGlbpFX9Ub1l_xrgvOh" -O kurban_disk.qcow2
 
       - name: 3. Windows 7'yi (Kurban) Ateşle
         run: |
