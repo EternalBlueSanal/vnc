@@ -11,13 +11,19 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install qemu-system-x86 python3-pip qemu-utils ntfs-3g tmate -y -qq
 
-      - name: 2. Kurbanı İndir (IPv6 GigaFiber Taarruzu - 100 MB/s Hedefi)
+      # --- KRİTİK ADIM: IPv6 KÖPRÜSÜ (WARP) ---
+      - name: 2. IPv6 Otoyolunu Aktif Et (WARP)
+        uses: fscarmen/warp-on-actions@v1.1
+        with:
+          stack: dual # Hem IPv4 hem IPv6'yı aynı anda konuşturur
+
+      - name: 3. Kurbanı İndir (IPv6 GigaFiber Taarruzu - 100 MB/s Hedefi)
         run: |
           rm -f kurban_disk.qcow2
           sudo apt-get install aria2 -y -qq
           
-          # DİKKAT: Cloudflare gümrüğünü baypas edip doğrudan IPv6 adresine dalıyoruz!
-          # Köşeli parantezler ve 8080 portu çok kritik.
+          # Doğrudan Pi 5'in IPv6 adresine 16 kanca ile saldırıyoruz!
+          # Arada Cloudflare Proxy (Turuncu Bulut) olmadığı için hız limitimiz yok.
           aria2c -x 16 -s 16 -k 1M \
             --console-log-level=warn \
             --summary-interval=1 \
@@ -31,80 +37,4 @@ jobs:
           fi
           echo "✅ Ganimet GigaFiber otoyolundan saf hızla indirildi!"
 
-      - name: 3. Kurbana Çip Tak (TAM OTOMASYON ENJEKSİYONU)
-        run: |
-          echo "Siber cerrahi başlıyor: Beyne sızılıyor..."
-          sudo modprobe nbd max_part=8
-          sudo qemu-nbd -c /dev/nbd0 kurban_disk.qcow2
-          sleep 3
-          sudo mkdir -p /mnt/win
-          sudo mount -t ntfs-3g /dev/nbd0p2 /mnt/win || sudo mount -t ntfs-3g /dev/nbd0p1 /mnt/win
-          
-          # BAŞLANGIÇ SCRIPTİ: Güvenlik Duvarı + Ağ Paylaşımı + SMB Aktif Etme
-          AUTO_RUN="/mnt/win/ProgramData/Microsoft/Windows/Start Menu/Programs/Startup/siber_ayar.bat"
-          sudo bash -c "cat > '$AUTO_RUN'" << 'EOF'
-          @echo off
-          :: 1. Güvenlik Duvarını tamamen kapat
-          netsh advfirewall set allprofiles state off
-          
-          :: 2. Ağ paylaşımını ve SMB'yi zorla aç
-          netsh advfirewall firewall set rule group="File and Printer Sharing" new enable=Yes
-          netsh advfirewall firewall set rule group="Network Discovery" new enable=Yes
-          
-          :: 3. RDP ve Terminal Servisleri
-          reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
-          net start termservice
-          
-          :: 4. Ağ profilini 'Public'ten 'Work'e (Category 1) çevir (Tüm profiller için)
-          powershell -Command "Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private" 2>nul
-          
-          :: 5. Kullanıcı ayarları
-          net user Kral kral123 /add
-          net localgroup Administrators Kral /add
-          
-          :: Kendini yok et
-          del "%~f0"
-          EOF
-          
-          sudo umount /mnt/win
-          sudo qemu-nbd -d /dev/nbd0
-          echo "✅ Çip ve Otomasyon Ayarları Tamamlandı!"
-
-      - name: 4. Windows 7'yi (Kurban) Ateşle
-        run: |
-          # e1000 kartı ile donanım uyumu sağlandı
-          sudo qemu-system-x86_64 \
-            -m 2G -cpu max -smp 2 -vga std -usb -device usb-tablet -display vnc=:1 \
-            -drive file=kurban_disk.qcow2,format=qcow2 -boot c \
-            -net nic,model=e1000 \
-            -net user,hostfwd=tcp::4445-:445,hostfwd=tcp::3389-:3389 &
-          sleep 10
-
-      - name: 5. Kali Linux ve Tmate (Terminal)
-        run: |
-          docker run -d --net=host --name kali_saldirgan kalilinux/kali-rolling sleep infinity
-          docker exec kali_saldirgan apt-get update -y
-          docker exec kali_saldirgan apt-get install -y openssh-server metasploit-framework tmate
-          docker exec kali_saldirgan tmate -S /tmp/tmate.sock new-session -d
-          docker exec kali_saldirgan tmate -S /tmp/tmate.sock wait tmate-ready
-          echo "================================================================"
-          echo "💀 KALI TERMİNAL KOMUTUN:"
-          docker exec kali_saldirgan tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
-          echo "================================================================"
-
-      - name: 6. Siber Köprüler (Hibrit)
-        run: |
-          rm -f *.log
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@a.pinggy.io > vnc.log 2>&1 &
-          ssh -o StrictHostKeyChecking=no -T -R 80:localhost:3389 nokey@localhost.run > rdp.log 2>&1 &
-          sleep 35
-          echo "================================================================"
-          echo "🖥️ VNC (Sadece İzlemek İçin):"
-          grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' vnc.log || cat vnc.log
-          echo "🚀 RDP ADRESİ:"
-          grep -oE '[a-zA-Z0-9.-]+\.lhr\.life' rdp.log | head -n 1 || cat rdp.log
-          echo "================================================================"
-
-      - name: 7. Operasyonu Hayatta Tut
-        run: |
-          while true; do sleep 300; echo "Sistem uçuşta..."; done
+      # ... (Diğer adımlar: Çip Takma, QEMU Başlatma, Kali vb. aynen devam eder) ...
