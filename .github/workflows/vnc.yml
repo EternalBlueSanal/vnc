@@ -1,40 +1,109 @@
-name: Win7_Kali_Siber_Duello_Otomatik
+name: Win7_GigaFiber_IPv6_Turbo
 
-on: workflow_dispatch 
+on: 
+  workflow_dispatch: # Manuel başlatma butonu
 
 jobs:
-  Hacker_Mevzisi:
+  Siber_Operasyon:
     runs-on: ubuntu-latest
     steps:
-      - name: 1. Siber Cephaneliği Kur
+      - name: 1. Sistem Gereksinimlerini Kuşan
         run: |
           sudo apt-get update -qq
-          sudo apt-get install qemu-system-x86 python3-pip qemu-utils ntfs-3g tmate -y -qq
+          sudo apt-get install qemu-system-x86 python3-pip qemu-utils ntfs-3g tmate aria2 -y -qq
 
-      # --- KRİTİK ADIM: IPv6 KÖPRÜSÜ (WARP) ---
+      # --- KRİTİK: GitHub Sunucusuna IPv6 Gözlüğü Takıyoruz ---
       - name: 2. IPv6 Otoyolunu Aktif Et (WARP)
         uses: fscarmen/warp-on-actions@v1.1
         with:
-          stack: dual # Hem IPv4 hem IPv6'yı aynı anda konuşturur
+          stack: dual # Hem IPv4 hem IPv6'yı aktif eder
 
-      - name: 3. Kurbanı İndir (IPv6 GigaFiber Taarruzu - 100 MB/s Hedefi)
+      - name: 3. Ganimeti İndir (IPv6 GigaFiber - 100 MB/s Hedefi)
         run: |
           rm -f kurban_disk.qcow2
-          sudo apt-get install aria2 -y -qq
+          echo "🚀 Evdeki Pi 5'e IPv6 üzerinden doğrudan sızılıyor..."
           
-          # Doğrudan Pi 5'in IPv6 adresine 16 kanca ile saldırıyoruz!
-          # Arada Cloudflare Proxy (Turuncu Bulut) olmadığı için hız limitimiz yok.
+          # Doğrudan senin Pi'nin IPv6 adresine 16 kanca ile saldırı!
+          # Arada Cloudflare Proxy olmadığı için hız limitimiz yok.
           aria2c -x 16 -s 16 -k 1M \
             --console-log-level=warn \
             --summary-interval=1 \
             --check-certificate=false \
             -d . -o kurban_disk.qcow2 "http://[2a02:ff0:3316:90cb:8aa2:9eff:feb6:3050]:8080/win7.qcow2"
           
+          # Boyut Kontrolü
           FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
           if [ $FILE_SIZE -lt 100000000 ]; then
-            echo "❌ HATA: Dosya tam inmedi veya bağlantı reddedildi!"
+            echo "❌ HATA: Dosya tam inmedi!"
             exit 1
           fi
-          echo "✅ Ganimet GigaFiber otoyolundan saf hızla indirildi!"
+          echo "✅ Ganimet GigaFiber otoyolundan başarıyla çekildi!"
 
-      # ... (Diğer adımlar: Çip Takma, QEMU Başlatma, Kali vb. aynen devam eder) ...
+      - name: 4. Kurbana Otomasyon Çipi Enjekte Et
+        run: |
+          echo "💉 Windows 7'nin beynine siber ayarlar işleniyor..."
+          sudo modprobe nbd max_part=8
+          sudo qemu-nbd -c /dev/nbd0 kurban_disk.qcow2
+          sleep 3
+          sudo mkdir -p /mnt/win
+          # Partition denemesi (p2 genelde Windows ana diskidir)
+          sudo mount -t ntfs-3g /dev/nbd0p2 /mnt/win || sudo mount -t ntfs-3g /dev/nbd0p1 /mnt/win
+          
+          # Başlangıç Scripti (Kendi Kendini Yok Eden Bat)
+          AUTO_RUN="/mnt/win/ProgramData/Microsoft/Windows/Start Menu/Programs/Startup/siber_ayar.bat"
+          sudo bash -c "cat > '$AUTO_RUN'" << 'EOF'
+          @echo off
+          netsh advfirewall set allprofiles state off
+          netsh advfirewall firewall set rule group="File and Printer Sharing" new enable=Yes
+          netsh advfirewall firewall set rule group="Network Discovery" new enable=Yes
+          reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+          net start termservice
+          powershell -Command "Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private" 2>nul
+          net user Kral kral123 /add
+          net localgroup Administrators Kral /add
+          del "%~f0"
+          EOF
+          
+          sudo umount /mnt/win
+          sudo qemu-nbd -d /dev/nbd0
+          echo "✅ Otomasyon Tamamlandı!"
+
+      - name: 5. Windows 7'yi (Kurban) Sahaya Sür
+        run: |
+          sudo qemu-system-x86_64 \
+            -m 2G -cpu max -smp 2 -vga std -usb -device usb-tablet -display vnc=:1 \
+            -drive file=kurban_disk.qcow2,format=qcow2 -boot c \
+            -net nic,model=e1000 \
+            -net user,hostfwd=tcp::4445-:445,hostfwd=tcp::3389-:3389 &
+          sleep 15
+
+      - name: 6. Kali Linux & Tmate Terminali Başlat
+        run: |
+          docker run -d --net=host --name kali_saldirgan kalilinux/kali-rolling sleep infinity
+          docker exec kali_saldirgan apt-get update -y
+          docker exec kali_saldirgan apt-get install -y openssh-server metasploit-framework tmate
+          docker exec kali_saldirgan tmate -S /tmp/tmate.sock new-session -d
+          docker exec kali_saldirgan tmate -S /tmp/tmate.sock wait tmate-ready
+          echo "================================================================"
+          echo "💀 KALI TERMİNAL KOMUTUN (Buradan Sızacağız):"
+          docker exec kali_saldirgan tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
+          echo "================================================================"
+
+      - name: 7. Siber Köprüleri (VNC/RDP) Ateşle
+        run: |
+          rm -f *.log
+          # VNC Portu (5901)
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@a.pinggy.io > vnc.log 2>&1 &
+          # RDP Portu (3389)
+          ssh -o StrictHostKeyChecking=no -T -R 80:localhost:3389 nokey@localhost.run > rdp.log 2>&1 &
+          sleep 35
+          echo "================================================================"
+          echo "🖥️ VNC ADRESİ (Ekrana Bakmak İçin):"
+          grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' vnc.log || cat vnc.log
+          echo "🚀 RDP ADRESİ (Windows'a Bağlanmak İçin):"
+          grep -oE '[a-zA-Z0-9.-]+\.lhr\.life' rdp.log | head -n 1 || cat rdp.log
+          echo "================================================================"
+
+      - name: 8. Operasyonu Hayatta Tut
+        run: |
+          while true; do sleep 300; echo "Siber üs ayakta..."; done
