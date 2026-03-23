@@ -10,40 +10,59 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install qemu-system-x86 python3-pip -y -qq
-          sudo pip3 install gdown
-          # Bore'u indiriyoruz (Hem VNC hem Saldırı portu için)
+          # Bore'u indiriyoruz (TCP Tünel Kralı)
           wget -q https://github.com/ekzhang/bore/releases/download/v0.4.1/bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
           tar -xzf bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
 
-      - name: 2. Hazır Kurbanı Drive'dan İndir (Kurulum Yok!)
+      - name: 2. Hazır Kurbanı İndir (Siber Bypass)
         run: |
-          # Gdown, Google'ın "bu dosya büyük, virüs taraması yapılamıyor" uyarısını otomatik aşar.
-          gdown --id "1xz4LdlcVc5l_Cxh93YLYgBYE-mzweont" -O kurban_disk.qcow2
+          # Google Drive 'çok fazla indirme' ve 'onay' engelini aşan özel komut:
+          FILE_ID="1xz4LdlcVc5l_Cxh93YLYgBYE-mzweont"
+          CONFIRM=$(curl -sc /tmp/cookies.txt "https://docs.google.com/uc?export=download&id=${FILE_ID}" | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')
+          curl -Lb /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=${CONFIRM}&id=${FILE_ID}" -o kurban_disk.qcow2
           
-      - name: 3. Turbo Motorları Ateşle
+          # Dosya kontrolü: Boyut 10MB'tan küçükse indirme başarısızdır (HTML inmiştir)
+          FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
+          if [ $FILE_SIZE -lt 10000000 ]; then
+            echo "❌ HATA: Disk dosyası tam inmedi (Google Engeli)! Kendi Drive'ına kopyalayıp ID değiştirmen gerekebilir."
+            exit 1
+          fi
+
+      - name: 3. Turbo Motorları Ateşle (x86_64 Fix)
         run: |
-          # DİKKAT: -vga virtio (Hızlı Görüntü) ve -smp 4 (Daha fazla çekirdek) ekledik
-          sudo qemu-system-i386 -m 4G -cpu core2duo -smp 4 -vga virtio -display vnc=:1 -drive file=kurban_disk.qcow2,format=qcow2 -boot c -net nic,model=virtio -net user,hostfwd=tcp::4445-:445 &
+          # Düzeltmeler: 
+          # 1. qemu-system-x86_64 (64-bit desteği için)
+          # 2. -cpu max (En yüksek performans için)
+          # 3. -vga std (VNC'de en stabil görüntü için)
+          # 4. -smp 2 (GitHub Action limitlerine uygun stabilite)
+          sudo qemu-system-x86_64 \
+            -m 4G \
+            -cpu max \
+            -smp 2 \
+            -vga std \
+            -display vnc=:1 \
+            -drive file=kurban_disk.qcow2,format=qcow2 \
+            -boot c \
+            -net nic,model=virtio \
+            -net user,hostfwd=tcp::4445-:445 &
           
-          sleep 5
+          sleep 10
           
-          # 1. Tünel: GÖRÜNTÜ İÇİN (VNC Portu 5901'i Bore üzerinden açıyoruz)
+          # Tünelleri Başlat
           ./bore local 5901 --to bore.pub > vnc_bore.log 2>&1 &
-          
-          # 2. Tünel: SALDIRI İÇİN (SMB Portu 4445'i Bore üzerinden açıyoruz)
           ./bore local 4445 --to bore.pub > attack_bore.log 2>&1 &
           
           sleep 15
           echo "================================================================"
-          echo "⚡ TURBO VNC VE SALDIRI HATTI AKTİF!"
+          echo "⚡ SİBER POLİGON AKTİF VE TURBO MODDA!"
           
           VNC_ADDR=$(grep -oE 'bore\.pub:[0-9]+' vnc_bore.log | head -n 1)
-          echo "🖥️ VNC BAĞLANTI ADRESİ: ${VNC_ADDR}"
+          echo "🖥️ VNC BAĞLANTI (VNC Viewer ile gir): ${VNC_ADDR}"
           
           ATTACK_ADDR=$(grep -oE 'bore\.pub:[0-9]+' attack_bore.log | head -n 1)
-          echo "💣 METASPLOIT HEDEFİ: ${ATTACK_ADDR}"
+          echo "💣 METASPLOIT HEDEFİ (RHOST:RPORT): ${ATTACK_ADDR}"
           echo "================================================================"
 
       - name: 4. Hedefi Hayatta Tut
         run: |
-          while true; do sleep 300; echo "Sistem uçuşta, poligon aktif..."; done
+          while true; do sleep 300; echo "Poligon aktif, kurban tetikte..."; done
