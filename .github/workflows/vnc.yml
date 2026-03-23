@@ -26,7 +26,7 @@ jobs:
           # -x 16 : 16 bağlantı açar
           # -s 16 : Dosyayı 16 parçaya böler
           # --summary-interval=10 : Her 10 saniyede bir hız raporu verir
-          aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=10 -d . -o kurban_disk.qcow2 "https://columnists-unlock-dispatch-handles.trycloudflare.com/win7.qcow2"
+          aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=10 -d . -o kurban_disk.qcow2 "https://generation-adapter-writes-seek.trycloudflare.com/win7.qcow2"
           
           # Dosyanın tam indiğini teyit edelim
           FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
