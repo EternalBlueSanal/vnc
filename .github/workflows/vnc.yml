@@ -1,4 +1,4 @@
-name: Win7_Kali_Siber_Duello
+name: Win7_Kali_Siber_Duello_Final
 
 on: workflow_dispatch 
 
@@ -9,33 +9,24 @@ jobs:
       - name: 1. Siber Cephaneliği Kur
         run: |
           sudo apt-get update -qq
-          sudo apt-get install qemu-system-x86 python3-pip qemu-utils ntfs-3g -y -qq
+          sudo apt-get install qemu-system-x86 python3-pip qemu-utils ntfs-3g tmate -y -qq
 
-      - name: 2. Kurbanı Kendi Üssümüzden İndir (Aria2 Turbo Mod)
+      - name: 2. Kurbanı İndir (Aria2 Turbo)
         run: |
           rm -f kurban_disk.qcow2
           sudo apt-get install aria2 -y -qq
-          aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=10 -d . -o kurban_disk.qcow2 "https://detective-gardening-european-asia.trycloudflare.com/win7.qcow2"
+          aria2c -x 16 -s 16 -k 1M --console-log-level=warn -d . -o kurban_disk.qcow2 "https://generation-adapter-writes-seek.trycloudflare.com/win7.qcow2"
           
-          FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
-          if [ $FILE_SIZE -lt 100000000 ]; then
-            echo "❌ HATA: Dosya tam inmedi!"
-            exit 1
-          fi
-
-      - name: 3. Kurbana Çip Tak (Offline Disk Enjeksiyonu)
+      - name: 3. Kurbana Çip Tak (RDP ve Şifre Ayarı)
         run: |
-          echo "Siber cerrahi başlıyor..."
           sudo modprobe nbd max_part=8
           sudo qemu-nbd -c /dev/nbd0 kurban_disk.qcow2
           sleep 3
           sudo mkdir -p /mnt/win
           sudo mount -t ntfs-3g /dev/nbd0p2 /mnt/win || sudo mount -t ntfs-3g /dev/nbd0p1 /mnt/win
-          
           AUTO_RUN="/mnt/win/ProgramData/Microsoft/Windows/Start Menu/Programs/Startup/siber_ayar.bat"
           sudo bash -c "cat > '$AUTO_RUN'" << 'EOF'
           @echo off
-          :: Güvenlik kalkanlarını indir ve RDP'yi hazırla
           netsh advfirewall set allprofiles state off
           reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
           net start termservice
@@ -43,12 +34,10 @@ jobs:
           net localgroup Administrators Kral /add
           del "%~f0"
           EOF
-          
           sudo umount /mnt/win
           sudo qemu-nbd -d /dev/nbd0
-          echo "✅ Çip yerleştirildi!"
 
-      - name: 4. Windows 7'yi (Kurban) Ateşle
+      - name: 4. Windows 7'yi Ateşle
         run: |
           sudo qemu-system-x86_64 \
             -m 2G -cpu max -smp 2 -vga std -usb -device usb-tablet -display vnc=:1 \
@@ -56,49 +45,40 @@ jobs:
             -net nic,model=virtio \
             -net user,hostfwd=tcp::4445-:445,hostfwd=tcp::3389-:3389 &
           sleep 10
-          
-      - name: 5. Kali Linux'u (Saldırgan) Kur ve SSH'ı Hazırla
+
+      - name: 5. Kali Linux ve Tmate (Terminal Tüneli) Hazırla
         run: |
+          # Kali'yi başlat
           docker run -d --net=host --name kali_saldirgan kalilinux/kali-rolling sleep infinity
           docker exec kali_saldirgan apt-get update -y
-          docker exec kali_saldirgan apt-get install -y openssh-server metasploit-framework iproute2
-          docker exec kali_saldirgan bash -c "echo 'root:kral123' | chpasswd"
-          docker exec kali_saldirgan bash -c "echo 'Port 2222' >> /etc/ssh/sshd_config"
-          docker exec kali_saldirgan bash -c "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config"
-          docker exec kali_saldirgan bash -c "echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config"
-          docker exec kali_saldirgan service ssh start
+          docker exec kali_saldirgan apt-get install -y openssh-server metasploit-framework tmate
+          
+          # Tmate'i Kali içinde başlat (Bu sana sarsılmaz bir SSH linki verecek)
+          docker exec kali_saldirgan tmate -S /tmp/tmate.sock new-session -d
+          docker exec kali_saldirgan tmate -S /tmp/tmate.sock wait tmate-ready
+          
+          echo "================================================================"
+          echo "💀 KALI TERMİNALİNE BAĞLANMAK İÇİN BU KOMUTU KOPYALA:"
+          docker exec kali_saldirgan tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
+          echo "================================================================"
 
-      - name: 6. Siber Köprüleri (Hibrit - 3 Farklı Otoban)
+      - name: 6. Win7 İçin RDP ve VNC Tünelleri (Pinggy Turbo)
         run: |
-          # 1. VNC için Pinggy (Zaten çalışıyor)
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@a.pinggy.io > vnc.log 2>&1 &
+          # VNC ve RDP için Pinggy (Avrupa Sunucusu)
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@eu.pinggy.io > vnc.log 2>&1 &
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:3389 tcp@eu.pinggy.io > rdp.log 2>&1 &
           
-          # 2. KALI SSH için Localhost.run (Hızlı ve stabil)
-          ssh -o StrictHostKeyChecking=no -R 80:localhost:2222 nokey@localhost.run > ssh.log 2>&1 &
-          
-          # 3. WIN7 RDP için Serveo (RDP trafiğinde çok iyidir)
-          ssh -o StrictHostKeyChecking=no -R 0:localhost:3389 serveo.net > rdp.log 2>&1 &
-          
-          echo "Siber hibrit otobanlar inşa ediliyor, 40 saniye sabret..."
-          sleep 40
-          
+          sleep 20
           echo "================================================================"
-          echo "🔥 SİBER HİBRİT POLİGON AKTİF!"
+          echo "🖥️ VNC ADRESİ (Windows'u uyandırmak için):"
+          grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' vnc.log || cat vnc.log
+          
+          echo "🚀 RDP (UZAK MASAÜSTÜ) ADRESİ:"
+          grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' rdp.log || cat rdp.log
           echo "----------------------------------------------------------------"
-          
-          echo "🖥️ VNC ADRESİ (Pinggy):"
-          grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' vnc.log || echo "VNC Bekleniyor..."
-          
-          echo "💀 KALI SSH ADRESİ (Localhost.run):"
-          grep -oE '[a-zA-Z0-9.-]+\.lhr\.life' ssh.log || cat ssh.log
-          
-          echo "🚀 RDP (UZAK MASAÜSTÜ) ADRESİ (Serveo):"
-          grep -oE 'forwarding port [0-9]+ to localhost:3389' rdp.log | grep -oE '[a-zA-Z0-9.-]+:[0-9]+' || cat rdp.log
-          
-          echo "================================================================"
           echo "Kullanıcı: Kral | Şifre: kral123"
           echo "================================================================"
-          
+
       - name: 7. Operasyonu Hayatta Tut
         run: |
-          while true; do sleep 300; echo "Sistem uçuşta, kurban tetikte..."; done
+          while true; do sleep 300; echo "Sistem uçuşta..."; done
