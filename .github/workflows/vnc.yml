@@ -15,10 +15,28 @@ jobs:
           wget -q https://github.com/ekzhang/bore/releases/download/v0.4.1/bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
           tar -xzf bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
 
-      - name: 2. Hazır Kurbanı Drive'dan İndir (Kurulum Yok!)
+      - name: 2. Hazır Kurbanı Drive'dan İndir (Siber Bypass)
         run: |
-          # İndirme adımın dokunulmadan aynen korundu
-          gdown --id "1eKZQu8NEMgP5TsGlbpFX9Ub1l_xrgvOh" -O kurban_disk.qcow2
+          # Eski bozuk dosya varsa temizleyelim
+          rm -f kurban_disk.qcow2
+          
+          FILE_ID="1xz4LdlcVc5l_Cxh93YLYgBYE-mzweont"
+          
+          # Google onay sayfasından çerezleri ve onay kodunu alıyoruz
+          curl -L -c cookies.txt "https://docs.google.com/uc?export=download&id=${FILE_ID}" | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p' > confirm.txt
+          
+          # Onay koduyla gerçek dosyayı söküp alıyoruz
+          curl -L -b cookies.txt "https://docs.google.com/uc?export=download&confirm=$(cat confirm.txt)&id=${FILE_ID}" -o kurban_disk.qcow2
+          
+          # Temizlik
+          rm cookies.txt confirm.txt
+          
+          # Dosya kontrolü (100MB'dan küçükse inmemiş demektir)
+          FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
+          if [ $FILE_SIZE -lt 100000000 ]; then
+            echo "❌ HATA: Google kotası hala kapalı! Dosya kopyalanmalı."
+            exit 1
+          fi
 
       - name: 3. Windows 7'yi (Kurban) Ateşle
         run: |
