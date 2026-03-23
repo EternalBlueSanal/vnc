@@ -76,30 +76,46 @@ jobs:
           docker exec kali_saldirgan bash -c "echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config"
           docker exec kali_saldirgan service ssh start
 
-      - name: 6. Siber Köprüleri (VNC, SSH ve YENİ RDP - AVRUPA TURBO) Başlat
+      - name: 6. Siber Köprüleri (Kesin Çözüm - Debug Mod)
         run: |
-          # 1. Tünel: VNC (Sadece ihtiyat için) - ROTA AVRUPA YAPILDI
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@eu.pinggy.io > vnc_pinggy.log 2>&1 &
+          # Eski logları temizle
+          rm -f *.log
           
-          # 2. Tünel: Kali SSH - ROTA AVRUPA YAPILDI
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:2222 tcp@eu.pinggy.io > ssh_pinggy.log 2>&1 &
+          # Tünelleri başlat (Avrupa Sunucusu)
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@eu.pinggy.io > vnc.log 2>&1 &
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:2222 tcp@eu.pinggy.io > ssh.log 2>&1 &
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:3389 tcp@eu.pinggy.io > rdp.log 2>&1 &
           
-          # 3. TÜNEL: UZAK MASAÜSTÜ (RDP) - ROTA AVRUPA YAPILDI!
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:3389 tcp@eu.pinggy.io > rdp_pinggy.log 2>&1 &
+          echo "Siber köprüler kuruluyor, 30 saniye sabret Kral..."
+          sleep 30
           
-          sleep 15
           echo "================================================================"
-          echo "🔥 CERRAHİ MÜDAHALELİ POLİGON (AVRUPA SUNUCUSU) HAZIR!"
+          echo "🚀 RDP (UZAK MASAÜSTÜ) BİLGİSİ:"
+          # Önce linki ara, bulamazsan tüm dosyayı bas
+          if grep -q "tcp://" rdp.log; then
+            grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' rdp.log
+          else
+            echo "⚠️ Link henüz oluşmadı, ham log aşağıda:"
+            cat rdp.log
+          fi
           
-          VNC_URL=$(grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' vnc_pinggy.log | head -n 1 | sed 's/tcp:\/\///')
-          echo "🖥️ VNC BAĞLANTISI (Kilit ekranı olursa tıkla): ${VNC_URL}"
+          echo "----------------------------------------------------------------"
+          echo "💀 KALI SSH BİLGİSİ:"
+          if grep -q "tcp://" ssh.log; then
+            grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' ssh.log
+          else
+            cat ssh.log
+          fi
           
-          RDP_URL=$(grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' rdp_pinggy.log | head -n 1 | sed 's/tcp:\/\///')
-          echo "🚀 UZAK MASAÜSTÜ (RDP) ADRESİ: ${RDP_URL}"
-          echo "   Kullanıcı: Kral | Şifre: kral123"
-          
-          SSH_URL=$(grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' ssh_pinggy.log | head -n 1 | sed 's/tcp:\/\///')
-          echo "💀 KALI SSH: ssh root@$(echo $SSH_URL | cut -d':' -f1) -p $(echo $SSH_URL | cut -d':' -f2)"
+          echo "----------------------------------------------------------------"
+          echo "🖥️ VNC BİLGİSİ:"
+          if grep -q "tcp://" vnc.log; then
+            grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' vnc.log
+          else
+            cat vnc.log
+          fi
+          echo "================================================================"
+          echo "Kullanıcı: Kral | Şifre: kral123"
           echo "================================================================"
           
       - name: 7. Operasyonu Hayatta Tut
