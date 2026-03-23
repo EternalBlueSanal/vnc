@@ -15,7 +15,7 @@ jobs:
         run: |
           rm -f kurban_disk.qcow2
           sudo apt-get install aria2 -y -qq
-          aria2c -x 16 -s 16 -k 1M --console-log-level=warn -d . -o kurban_disk.qcow2 "https://ram-penny-same-todd.trycloudflare.com/win7.qcow2"
+          aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=1 -d . -o kurban_disk.qcow2 "https://ram-penny-same-todd.trycloudflare.com/win7.qcow2"
           
       - name: 3. Kurbana Çip Tak (TAM OTOMASYON ENJEKSİYONU)
         run: |
