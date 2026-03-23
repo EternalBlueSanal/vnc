@@ -52,18 +52,18 @@ jobs:
           
       - name: 4. Kali Linux'u (Saldırgan) Kur ve SSH'ı Hazırla
         run: |
-          # Kali Docker konteynerini başlatıyoruz (Host ağı üzerinden bağlantı)
-          docker run -d --net=host --name kali_saldırgan kalilinux/kali-rolling sleep infinity
+          # Kali Docker konteynerini başlatıyoruz (İsim düzeltildi: kali_saldirgan)
+          docker run -d --net=host --name kali_saldirgan kalilinux/kali-rolling sleep infinity
           
           # SSH ve sızma araçlarının kurulumu
-          docker exec kali_saldırgan apt-get update -y
-          docker exec kali_saldırgan apt-get install -y openssh-server metasploit-framework iproute2
+          docker exec kali_saldirgan apt-get update -y
+          docker exec kali_saldirgan apt-get install -y openssh-server metasploit-framework iproute2
           
           # SSH yapılandırması (User: root, Şifre: kral123)
-          docker exec kali_saldırgan mkdir -p /run/sshd
-          docker exec kali_saldırgan bash -c "echo 'root:kral123' | chpasswd"
-          docker exec kali_saldırgan sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-          docker exec kali_saldırgan service ssh start
+          docker exec kali_saldirgan mkdir -p /run/sshd
+          docker exec kali_saldirgan bash -c "echo 'root:kral123' | chpasswd"
+          docker exec kali_saldirgan sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+          docker exec kali_saldirgan service ssh start
 
       - name: 5. Siber Köprüleri (Bore Tünelleri) Başlat
         run: |
