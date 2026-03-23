@@ -15,7 +15,7 @@ jobs:
         run: |
           rm -f kurban_disk.qcow2
           sudo apt-get install aria2 -y -qq
-          # 16 Koldan saldırı! Kendi bağlantını buraya yapıştırdın, süper.
+          # 16 Koldan saldırı!
           aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=10 -d . -o kurban_disk.qcow2 "https://generation-adapter-writes-seek.trycloudflare.com/win7.qcow2"
           
           FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
@@ -52,7 +52,7 @@ jobs:
           sudo qemu-nbd -d /dev/nbd0
           echo "✅ Çip yerleştirildi!"
 
-      - name: 4. Windows 7'yi (Kurban) Ateşle (EKSİK OLAN ADIM EKLENDİ!)
+      - name: 4. Windows 7'yi (Kurban) Ateşle
         run: |
           # 3389 RDP ve 445 SMB portlarını açarak Win7'yi başlatıyoruz
           sudo qemu-system-x86_64 \
@@ -76,20 +76,20 @@ jobs:
           docker exec kali_saldirgan bash -c "echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config"
           docker exec kali_saldirgan service ssh start
 
-      - name: 6. Siber Köprüleri (VNC, SSH ve YENİ RDP) Başlat
+      - name: 6. Siber Köprüleri (VNC, SSH ve YENİ RDP - AVRUPA TURBO) Başlat
         run: |
-          # 1. Tünel: VNC (Sadece ihtiyat için)
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@a.pinggy.io > vnc_pinggy.log 2>&1 &
+          # 1. Tünel: VNC (Sadece ihtiyat için) - ROTA AVRUPA YAPILDI
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@eu.pinggy.io > vnc_pinggy.log 2>&1 &
           
-          # 2. Tünel: Kali SSH
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:2222 tcp@a.pinggy.io > ssh_pinggy.log 2>&1 &
+          # 2. Tünel: Kali SSH - ROTA AVRUPA YAPILDI
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:2222 tcp@eu.pinggy.io > ssh_pinggy.log 2>&1 &
           
-          # 3. TÜNEL: UZAK MASAÜSTÜ (RDP) - Çipimiz sayesinde buraya gireceğiz!
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:3389 tcp@a.pinggy.io > rdp_pinggy.log 2>&1 &
+          # 3. TÜNEL: UZAK MASAÜSTÜ (RDP) - ROTA AVRUPA YAPILDI!
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:3389 tcp@eu.pinggy.io > rdp_pinggy.log 2>&1 &
           
           sleep 15
           echo "================================================================"
-          echo "🔥 CERRAHİ MÜDAHALELİ POLİGON HAZIR!"
+          echo "🔥 CERRAHİ MÜDAHALELİ POLİGON (AVRUPA SUNUCUSU) HAZIR!"
           
           VNC_URL=$(grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' vnc_pinggy.log | head -n 1 | sed 's/tcp:\/\///')
           echo "🖥️ VNC BAĞLANTISI (Kilit ekranı olursa tıkla): ${VNC_URL}"
