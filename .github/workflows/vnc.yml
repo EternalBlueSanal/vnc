@@ -1,4 +1,4 @@
-name: Win7_Kali_Siber_Duello_Final
+name: Win7_Kali_Siber_Duello_Guncel
 
 on: workflow_dispatch 
 
@@ -11,10 +11,11 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install qemu-system-x86 python3-pip qemu-utils ntfs-3g tmate -y -qq
 
-      - name: 2. Kurbanı İndir (Aria2 Turbo)
+      - name: 2. Kurbanı İndir (Yeni URL - Aria2 Turbo)
         run: |
           rm -f kurban_disk.qcow2
           sudo apt-get install aria2 -y -qq
+          # Yeni Cloudflare URL'niz buraya eklendi
           aria2c -x 16 -s 16 -k 1M --console-log-level=warn -d . -o kurban_disk.qcow2 "https://ram-penny-same-todd.trycloudflare.com/win7.qcow2"
           
       - name: 3. Kurbana Çip Tak (RDP ve Şifre Ayarı)
@@ -46,31 +47,30 @@ jobs:
             -net user,hostfwd=tcp::4445-:445,hostfwd=tcp::3389-:3389 &
           sleep 10
 
-      - name: 5. Kali Linux ve Tmate (Terminal Tüneli) Hazırla
+      - name: 5. Kali Linux ve Tmate (Sarsılmaz SSH) Hazırla
         run: |
-          # Kali'yi başlat
           docker run -d --net=host --name kali_saldirgan kalilinux/kali-rolling sleep infinity
           docker exec kali_saldirgan apt-get update -y
           docker exec kali_saldirgan apt-get install -y openssh-server metasploit-framework tmate
           
-          # Tmate'i Kali içinde başlat (Bu sana sarsılmaz bir SSH linki verecek)
+          # Tmate'i başlat ve SSH linkini al
           docker exec kali_saldirgan tmate -S /tmp/tmate.sock new-session -d
           docker exec kali_saldirgan tmate -S /tmp/tmate.sock wait tmate-ready
           
           echo "================================================================"
-          echo "💀 KALI TERMİNALİNE BAĞLANMAK İÇİN BU KOMUTU KOPYALA:"
+          echo "💀 KALI TERMİNALİNE BAĞLANMAK İÇİN BU KOMUTU KOPYALA VE YAPIŞTIR:"
           docker exec kali_saldirgan tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
           echo "================================================================"
 
-      - name: 6. Win7 İçin RDP ve VNC Tünelleri (Pinggy Turbo)
+      - name: 6. Win7 İçin Görsel Tüneller (Pinggy Turbo)
         run: |
-          # VNC ve RDP için Pinggy (Avrupa Sunucusu)
+          # VNC ve RDP için Pinggy (Avrupa)
           ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@eu.pinggy.io > vnc.log 2>&1 &
           ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:3389 tcp@eu.pinggy.io > rdp.log 2>&1 &
           
           sleep 20
           echo "================================================================"
-          echo "🖥️ VNC ADRESİ (Windows'u uyandırmak için):"
+          echo "🖥️ VNC ADRESİ (Ekrana tıklayıp RDP'yi tetiklemek için):"
           grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' vnc.log || cat vnc.log
           
           echo "🚀 RDP (UZAK MASAÜSTÜ) ADRESİ:"
