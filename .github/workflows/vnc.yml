@@ -21,19 +21,27 @@ jobs:
       - name: 3. Ganimeti İndir (IPv6 GigaFiber - 100 MB/s Hedefi)
         run: |
           rm -f kurban_disk.qcow2
-          echo "🚀 Evdeki Pi 5'e IPv6 üzerinden doğrudan sızılıyor..."
+          echo "🚀 Evdeki Pi 5'e IPv6 üzerinden bağlantı deneniyor..."
           
-          # warn log seviyesini kaldırdık ve log aralığını 5 saniyeye çektik.
-          # Böylece her 5 saniyede bir hızını, inen boyutu ve yüzdeleri ekranda göreceksin.
+          # 1. Önce kapı açık mı diye küçük bir ping/test atıyoruz.
+          # Eğer bu adımda "Connection refused" veya "Timeout" yazarsa anlarız ki Pi'ye ulaşılamıyor.
+          echo "🔍 Ağ bağlantısı test ediliyor..."
+          curl -I -6 --connect-timeout 10 "http://[2a02:ff0:3316:90cb:8aa2:9eff:feb6:3050]:8080/win7.qcow2" || echo "⚠️ Pi'ye ulaşılamadı! Ağ veya Port sorunu var."
+          
+          echo "📥 İndirme motoru çalıştırılıyor..."
+          
+          # 2. aria2c'yi sessizlikten çıkarıyoruz ve bağlantı yoksa 10 saniye içinde pes etmesini söylüyoruz.
           aria2c -x 16 -s 16 -k 1M \
+            --console-log-level=notice \
             --summary-interval=5 \
+            --connect-timeout=10 \
             --check-certificate=false \
             -d . -o kurban_disk.qcow2 "http://[2a02:ff0:3316:90cb:8aa2:9eff:feb6:3050]:8080/win7.qcow2"
           
           # Boyut Kontrolü
-          FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
+          FILE_SIZE=$(stat -c%s "kurban_disk.qcow2" || echo 0)
           if [ $FILE_SIZE -lt 100000000 ]; then
-            echo "❌ HATA: Dosya tam inmedi!"
+            echo "❌ HATA: Dosya tam inmedi veya bağlantı koptu!"
             exit 1
           fi
           echo "✅ Ganimet GigaFiber otoyolundan başarıyla çekildi!"
