@@ -71,24 +71,30 @@ jobs:
           # Kali SSH servisini başlat
           docker exec kali_saldirgan service ssh start
 
-      - name: 5. Siber Köprüleri (Bore Tünelleri) Başlat
+      - name: 5. Siber Köprüleri (Sarsılmaz Pinggy Tünelleri) Başlat
         run: |
-          # 1. Tünel: Win7 Ekranı (VNC) - Port 5901
-          ./bore local 5901 --to bore.pub > vnc_bore.log 2>&1 &
+          # Bore'u çöpe atıyoruz. Saf SSH ile TCP tüneli kazıyoruz!
           
-          # 2. Tünel: Kali Komut Satırı (SSH) - ARTIK PORT 2222 TÜNELLENİYOR
-          ./bore local 2222 --to bore.pub > ssh_bore.log 2>&1 &
+          # 1. Tünel: Win7 Ekranı (VNC - Port 5901)
+          # Pinggy TCP tünelini arka planda başlatıyoruz
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@a.pinggy.io > vnc_pinggy.log 2>&1 &
           
-          sleep 20
+          # 2. Tünel: Kali Komut Satırı (SSH - Port 2222)
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:2222 tcp@a.pinggy.io > ssh_pinggy.log 2>&1 &
+          
+          sleep 15
           echo "================================================================"
-          echo "🔥 SİBER DÜELLO ALANI ÇATIŞMASIZ HAZIR!"
+          echo "🔥 SARSILMAZ SİBER DÜELLO ALANI HAZIR!"
           
-          VNC_ADDR=$(grep -oE 'bore\.pub:[0-9]+' vnc_bore.log | head -n 1)
-          echo "🖥️ WIN7 EKRANI (VNC Viewer ile): ${VNC_ADDR}"
+          # VNC Adresini loglardan çekiyoruz
+          VNC_URL=$(grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' vnc_pinggy.log | head -n 1 | sed 's/tcp:\/\///')
+          echo "🖥️ WIN7 EKRANI (VNC Viewer ile gir): ${VNC_URL}"
           
-          SSH_ADDR=$(grep -oE 'bore\.pub:[0-9]+' ssh_bore.log | head -n 1)
-          SSH_HOST=$(echo $SSH_ADDR | cut -d':' -f1)
-          SSH_PORT=$(echo $SSH_ADDR | cut -d':' -f2)
+          # SSH Adresini loglardan çekiyoruz
+          SSH_URL=$(grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' ssh_pinggy.log | head -n 1 | sed 's/tcp:\/\///')
+          SSH_HOST=$(echo $SSH_URL | cut -d':' -f1)
+          SSH_PORT=$(echo $SSH_URL | cut -d':' -f2)
+          
           echo "💀 KALI SSH BAĞLANTISI: ssh root@${SSH_HOST} -p ${SSH_PORT}"
           echo "🔑 KALI ŞİFRE: kral123"
           echo "----------------------------------------------------------------"
