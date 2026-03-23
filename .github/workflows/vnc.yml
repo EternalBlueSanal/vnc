@@ -11,20 +11,21 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install qemu-system-x86 python3-pip qemu-utils ntfs-3g tmate -y -qq
 
-      - name: 2. Kurbanı İndir (Akıllı Tünel - 16 Kanca)
+      - name: 2. Kurbanı İndir (Sarsılmaz Kral Tüneli - 16 Kanca)
         run: |
           rm -f kurban_disk.qcow2
           sudo apt-get install aria2 -y -qq
-          # İşte senin 16 kancayı destekleyen yepyeni tünelin!
+          # İşte kendi siber üssünün ASLA DEĞİŞMEYEN o muazzam linki!
           # Her saniye rapor vermesi için --summary-interval=1 ekli
-          aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=1 -d . -o kurban_disk.qcow2 "https://characters-clothing-fraction-speaker.trycloudflare.com/win7.qcow2"
+          aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=1 -d . -o kurban_disk.qcow2 "https://win7.bilalnetwork.site/win7.qcow2"
           
           FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
           if [ $FILE_SIZE -lt 100000000 ]; then
             echo "❌ HATA: Dosya tam inmedi!"
             exit 1
           fi
-          echo "✅ Ganimet 16 kancayla parçalanarak sömürüldü!"
+          echo "✅ Ganimet kendi siber üssünden 16 kancayla sömürüldü!"
+
       - name: 3. Kurbana Çip Tak (TAM OTOMASYON ENJEKSİYONU)
         run: |
           echo "Siber cerrahi başlıyor: Beyne sızılıyor..."
@@ -59,13 +60,6 @@ jobs:
           :: Kendini yok et
           del "%~f0"
           EOF
-          
-          # HİLELİ HAMLE: Kayıt Defteri Üzerinden Otomatik Oturum Açma (Auto-Login)
-          # Bu sayede VNC'den tıklamana gerek kalmaz, masaüstü pat diye açılır.
-          # (Not: Kurbanın varsayılan kullanıcı adı genelde Administrator veya User'dır)
-          # Burada Administrator üzerine oynuyoruz:
-          # sudo chntpw -u Administrator /mnt/win/Windows/System32/config/SAM << 'EOF'
-          # (Bu kısım karmaşık olduğu için script içine Registry kaydı ekliyoruz)
           
           sudo umount /mnt/win
           sudo qemu-nbd -d /dev/nbd0
