@@ -11,12 +11,20 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install qemu-system-x86 python3-pip qemu-utils ntfs-3g tmate -y -qq
 
-      - name: 2. Kurbanı İndir (Yeni URL - Aria2 Turbo)
+      - name: 2. Kurbanı İndir (Akıllı Tünel - 16 Kanca)
         run: |
           rm -f kurban_disk.qcow2
           sudo apt-get install aria2 -y -qq
-          aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=1 -d . -o kurban_disk.qcow2 "https://ram-penny-same-todd.trycloudflare.com/win7.qcow2"
+          # İşte senin 16 kancayı destekleyen yepyeni tünelin!
+          # Her saniye rapor vermesi için --summary-interval=1 ekli
+          aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=1 -d . -o kurban_disk.qcow2 "https://characters-clothing-fraction-speaker.trycloudflare.com/win7.qcow2"
           
+          FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
+          if [ $FILE_SIZE -lt 100000000 ]; then
+            echo "❌ HATA: Dosya tam inmedi!"
+            exit 1
+          fi
+          echo "✅ Ganimet 16 kancayla parçalanarak sömürüldü!"
       - name: 3. Kurbana Çip Tak (TAM OTOMASYON ENJEKSİYONU)
         run: |
           echo "Siber cerrahi başlıyor: Beyne sızılıyor..."
