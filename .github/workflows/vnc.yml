@@ -38,12 +38,12 @@ jobs:
           
       - name: 3. Windows 7'yi (Kurban) Ateşle
         run: |
-          # 64-bit desteği ve optimize edilmiş CPU ile Win7'yi başlatıyoruz
           sudo qemu-system-x86_64 \
             -m 2G \
             -cpu max \
             -smp 2 \
             -vga std \
+            -usb -device usb-tablet \
             -display vnc=:1 \
             -drive file=kurban_disk.qcow2,format=qcow2 \
             -boot c \
