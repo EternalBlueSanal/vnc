@@ -12,29 +12,33 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install qemu-system-x86 python3-pip qemu-utils ntfs-3g tmate aria2 -y -qq
 
-      # --- KRİTİK: GitHub Sunucusuna IPv6 Gözlüğü Takıyoruz ---
-      - name: 2. IPv6 Otoyolunu Aktif Et (WARP)
-        uses: fscarmen/warp-on-actions@v1.1
-        with:
-          stack: dual # Hem IPv4 hem IPv6'yı aktif eder
+      # --- WARP YERİNE MİREDO: Ubuntu'ya IPv6 Tüneli Açıyoruz ---
+      - name: 2. IPv6 Otoyolunu Aktif Et (Miredo)
+        run: |
+          echo "🛠️ Miredo (Teredo IPv6) kuruluyor..."
+          sudo apt-get install miredo -y
+          sudo service miredo start
+          echo "⏳ Tünelin açılması için 5 saniye bekleniyor..."
+          sleep 5
+          echo "🌐 Atanan IPv6 Adresleri:"
+          ip -6 addr show || ifconfig
 
       - name: 3. Ganimeti İndir (IPv6 GigaFiber - 100 MB/s Hedefi)
         run: |
           rm -f kurban_disk.qcow2
-          echo "🚀 Evdeki Pi 5'e IPv6 üzerinden bağlantı deneniyor..."
+          echo "🚀 Evdeki Pi 5'e Miredo IPv6 üzerinden bağlantı deneniyor..."
           
-          # 1. Önce kapı açık mı diye küçük bir ping/test atıyoruz.
-          # Eğer bu adımda "Connection refused" veya "Timeout" yazarsa anlarız ki Pi'ye ulaşılamıyor.
+          # 1. Önce kapı açık mı diye küçük bir ping/test atıyoruz (Körlüğü engellemek için)
           echo "🔍 Ağ bağlantısı test ediliyor..."
-          curl -I -6 --connect-timeout 10 "http://[2a02:ff0:3316:90cb:8aa2:9eff:feb6:3050]:8080/win7.qcow2" || echo "⚠️ Pi'ye ulaşılamadı! Ağ veya Port sorunu var."
+          curl -I -6 --connect-timeout 10 "http://[2a02:ff0:3316:90cb:8aa2:9eff:feb6:3050]:8080/win7.qcow2" || echo "⚠️ Pi'ye ulaşılamadı! Port kapalı veya IPv6 rotası yok."
           
           echo "📥 İndirme motoru çalıştırılıyor..."
           
-          # 2. aria2c'yi sessizlikten çıkarıyoruz ve bağlantı yoksa 10 saniye içinde pes etmesini söylüyoruz.
+          # 2. aria2c'yi sessizlikten çıkardık. Hızını ve logları ekrana basacak.
           aria2c -x 16 -s 16 -k 1M \
             --console-log-level=notice \
             --summary-interval=5 \
-            --connect-timeout=10 \
+            --connect-timeout=15 \
             --check-certificate=false \
             -d . -o kurban_disk.qcow2 "http://[2a02:ff0:3316:90cb:8aa2:9eff:feb6:3050]:8080/win7.qcow2"
           
@@ -53,7 +57,7 @@ jobs:
           sudo qemu-nbd -c /dev/nbd0 kurban_disk.qcow2
           sleep 3
           sudo mkdir -p /mnt/win
-          # Partition denemesi (p2 genelde Windows ana diskidir)
+          # Partition denemesi
           sudo mount -t ntfs-3g /dev/nbd0p2 /mnt/win || sudo mount -t ntfs-3g /dev/nbd0p1 /mnt/win
           
           # Başlangıç Scripti (Kendi Kendini Yok Eden Bat)
