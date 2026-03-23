@@ -38,12 +38,12 @@ jobs:
           sudo umount /mnt/win
           sudo qemu-nbd -d /dev/nbd0
 
-      - name: 4. Windows 7'yi Ateşle
+      - name: 4. Windows 7'yi (Kurban) Ateşle
         run: |
           sudo qemu-system-x86_64 \
             -m 2G -cpu max -smp 2 -vga std -usb -device usb-tablet -display vnc=:1 \
             -drive file=kurban_disk.qcow2,format=qcow2 -boot c \
-            -net nic,model=virtio \
+            -net nic,model=e1000 \
             -net user,hostfwd=tcp::4445-:445,hostfwd=tcp::3389-:3389 &
           sleep 10
 
