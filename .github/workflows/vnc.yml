@@ -1,4 +1,4 @@
-name: Win7_Turbo_VNC_Poligonu
+name: Win7_Kali_Siber_Duello
 
 on: workflow_dispatch 
 
@@ -10,28 +10,21 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install qemu-system-x86 python3-pip -y -qq
-          # Bore'u indiriyoruz (TCP Tünel Kralı)
+          sudo pip3 install gdown
+          # Bore'u indiriyoruz (Çift tünel için)
           wget -q https://github.com/ekzhang/bore/releases/download/v0.4.1/bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
           tar -xzf bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
-          sudo pip3 install gdown
 
       - name: 2. Hazır Kurbanı Drive'dan İndir (Kurulum Yok!)
-
         run: |
-
-          # Gdown, Google'ın "bu dosya büyük, virüs taraması yapılamıyor" uyarısını otomatik aşar.
-
+          # İndirme adımın dokunulmadan aynen korundu
           gdown --id "1xz4LdlcVc5l_Cxh93YLYgBYE-mzweont" -O kurban_disk.qcow2
 
-      - name: 3. Turbo Motorları Ateşle (x86_64 Fix)
+      - name: 3. Windows 7'yi (Kurban) Ateşle
         run: |
-          # Düzeltmeler: 
-          # 1. qemu-system-x86_64 (64-bit desteği için)
-          # 2. -cpu max (En yüksek performans için)
-          # 3. -vga std (VNC'de en stabil görüntü için)
-          # 4. -smp 2 (GitHub Action limitlerine uygun stabilite)
+          # Win7'nin 445 portunu ana makinede 4445'e bağlıyoruz
           sudo qemu-system-x86_64 \
-            -m 4G \
+            -m 2G \
             -cpu max \
             -smp 2 \
             -vga std \
@@ -41,23 +34,45 @@ jobs:
             -net nic,model=virtio \
             -net user,hostfwd=tcp::4445-:445 &
           
-          sleep 10
+      - name: 4. Kali Linux'u (Saldırgan) Kur ve SSH'ı Hazırla
+        run: |
+          # Kali Docker konteynerini başlatıyoruz (Host ağı ile bağlanıyor)
+          docker run -d --net=host --name kali_saldırgan kalilinux/kali-rolling sleep infinity
           
-          # Tünelleri Başlat
+          # Kali içine SSH ve sızma araçlarını kuruyoruz
+          docker exec kali_saldırgan apt-get update -y
+          docker exec kali_saldırgan apt-get install -y openssh-server metasploit-framework iproute2
+          
+          # SSH ayarları (Kullanıcı: root, Şifre: kral123)
+          docker exec kali_saldırgan mkdir -p /run/sshd
+          docker exec kali_saldırgan bash -c "echo 'root:kral123' | chpasswd"
+          docker exec kali_saldırgan sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+          docker exec kali_saldırgan service ssh start
+
+      - name: 5. Çift Kanallı Siber Köprüyü Kur
+        run: |
+          # 1. Tünel: Windows 7 Görüntüsü (VNC)
           ./bore local 5901 --to bore.pub > vnc_bore.log 2>&1 &
-          ./bore local 4445 --to bore.pub > attack_bore.log 2>&1 &
           
-          sleep 15
+          # 2. Tünel: Kali Linux Komut Satırı (SSH)
+          ./bore local 22 --to bore.pub > ssh_bore.log 2>&1 &
+          
+          sleep 20
           echo "================================================================"
-          echo "⚡ SİBER POLİGON AKTİF VE TURBO MODDA!"
+          echo "🔥 SİBER DÜELLO ALANI AKTİF!"
           
           VNC_ADDR=$(grep -oE 'bore\.pub:[0-9]+' vnc_bore.log | head -n 1)
-          echo "🖥️ VNC BAĞLANTI (VNC Viewer ile gir): ${VNC_ADDR}"
+          echo "🖥️ WIN7 EKRANI (VNC Viewer ile): ${VNC_ADDR}"
           
-          ATTACK_ADDR=$(grep -oE 'bore\.pub:[0-9]+' attack_bore.log | head -n 1)
-          echo "💣 METASPLOIT HEDEFİ (RHOST:RPORT): ${ATTACK_ADDR}"
+          SSH_ADDR=$(grep -oE 'bore\.pub:[0-9]+' ssh_bore.log | head -n 1)
+          SSH_HOST=$(echo $SSH_ADDR | cut -d':' -f1)
+          SSH_PORT=$(echo $SSH_ADDR | cut -d':' -f2)
+          echo "💀 KALI SSH BAĞLANTISI: ssh root@${SSH_HOST} -p ${SSH_PORT}"
+          echo "🔑 KALI ŞİFRE: kral123"
+          echo "----------------------------------------------------------------"
+          echo "🎯 KALI İÇİNDEN SALDIRI HEDEFİ: 127.0.0.1:4445"
           echo "================================================================"
 
-      - name: 4. Hedefi Hayatta Tut
+      - name: 6. Poligonu Ayakta Tut
         run: |
-          while true; do sleep 300; echo "Poligon aktif, kurban tetikte..."; done
+          while true; do sleep 300; echo "Savaş devam ediyor..."; done
