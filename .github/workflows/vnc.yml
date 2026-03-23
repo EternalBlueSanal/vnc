@@ -62,20 +62,31 @@ jobs:
           docker exec kali_saldirgan tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
           echo "================================================================"
 
-      - name: 6. Win7 İçin Görsel Tüneller (Pinggy Turbo)
+      - name: 6. Siber Köprüleri (Sarsılmaz Üçlü - Hibrit Mod)
         run: |
-          # VNC ve RDP için Pinggy (Avrupa)
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@eu.pinggy.io > vnc.log 2>&1 &
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:3389 tcp@eu.pinggy.io > rdp.log 2>&1 &
+          rm -f *.log
+          # 1. VNC için standart Pinggy (a.pinggy.io her zaman çözülür)
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@a.pinggy.io > vnc.log 2>&1 &
           
-          sleep 20
+          # 2. RDP için Localhost.run (DNS hatası vermez, direkt TCP tüneli açar)
+          ssh -o StrictHostKeyChecking=no -T -R 80:localhost:3389 nokey@localhost.run > rdp.log 2>&1 &
+          
+          echo "Siber köprüler inşa ediliyor, 35 saniye sabret Kral..."
+          sleep 35
+          
           echo "================================================================"
-          echo "🖥️ VNC ADRESİ (Ekrana tıklayıp RDP'yi tetiklemek için):"
+          echo "🔥 SİBER HİBRİT POLİGON AKTİF!"
+          echo "----------------------------------------------------------------"
+          
+          echo "🖥️ VNC ADRESİ (Pinggy):"
           grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' vnc.log || cat vnc.log
           
-          echo "🚀 RDP (UZAK MASAÜSTÜ) ADRESİ:"
-          grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' rdp.log || cat rdp.log
+          echo "🚀 RDP (UZAK MASAÜSTÜ) ADRESİ (LHR):"
+          grep -oE '[a-zA-Z0-9.-]+\.lhr\.life' rdp.log | head -n 1 || cat rdp.log
+          
           echo "----------------------------------------------------------------"
+          echo "💀 KALI TERMİNALİ İÇİN: 5. Adımdaki 'tmate_ssh' komutuna bak!"
+          echo "================================================================"
           echo "Kullanıcı: Kral | Şifre: kral123"
           echo "================================================================"
 
