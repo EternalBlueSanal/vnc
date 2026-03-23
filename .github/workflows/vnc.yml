@@ -9,13 +9,12 @@ jobs:
       - name: 1. Siber Cephaneliği Kur
         run: |
           sudo apt-get update -qq
-          sudo apt-get install qemu-system-x86 python3-pip -y -qq
+          sudo apt-get install qemu-system-x86 python3-pip qemu-utils ntfs-3g -y -qq
 
       - name: 2. Kurbanı Kendi Üssümüzden İndir (Aria2 Turbo Mod)
         run: |
           rm -f kurban_disk.qcow2
           sudo apt-get install aria2 -y -qq
-          # 16 Koldan saldırı!
           aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=10 -d . -o kurban_disk.qcow2 "https://generation-adapter-writes-seek.trycloudflare.com/win7.qcow2"
           
           FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
@@ -23,17 +22,13 @@ jobs:
             echo "❌ HATA: Dosya tam inmedi!"
             exit 1
           fi
-          echo "✅ Ganimet başarıyla indirildi!"
-          
+
       - name: 3. Kurbana Çip Tak (Offline Disk Enjeksiyonu)
         run: |
           echo "Siber cerrahi başlıyor..."
-          sudo apt-get install qemu-utils ntfs-3g -y -qq
-          
           sudo modprobe nbd max_part=8
           sudo qemu-nbd -c /dev/nbd0 kurban_disk.qcow2
           sleep 3
-          
           sudo mkdir -p /mnt/win
           sudo mount -t ntfs-3g /dev/nbd0p2 /mnt/win || sudo mount -t ntfs-3g /dev/nbd0p1 /mnt/win
           
@@ -54,7 +49,6 @@ jobs:
 
       - name: 4. Windows 7'yi (Kurban) Ateşle
         run: |
-          # 3389 RDP ve 445 SMB portlarını açarak Win7'yi başlatıyoruz
           sudo qemu-system-x86_64 \
             -m 2G -cpu max -smp 2 -vga std -usb -device usb-tablet -display vnc=:1 \
             -drive file=kurban_disk.qcow2,format=qcow2 -boot c \
@@ -67,53 +61,34 @@ jobs:
           docker run -d --net=host --name kali_saldirgan kalilinux/kali-rolling sleep infinity
           docker exec kali_saldirgan apt-get update -y
           docker exec kali_saldirgan apt-get install -y openssh-server metasploit-framework iproute2
-          
-          docker exec kali_saldirgan mkdir -p /run/sshd
           docker exec kali_saldirgan bash -c "echo 'root:kral123' | chpasswd"
-          
           docker exec kali_saldirgan bash -c "echo 'Port 2222' >> /etc/ssh/sshd_config"
           docker exec kali_saldirgan bash -c "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config"
           docker exec kali_saldirgan bash -c "echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config"
           docker exec kali_saldirgan service ssh start
 
-      - name: 6. Siber Köprüleri (Kesin Çözüm - Debug Mod)
+      - name: 6. Siber Köprüleri (Localhost.run Turbo Mod) Başlat
         run: |
-          # Eski logları temizle
           rm -f *.log
+          # Localhost.run tünelleri (DNS sorunu çıkarmaz, daha hızlıdır)
+          ssh -o StrictHostKeyChecking=no -T -R 80:localhost:5901 nokey@localhost.run > vnc.log 2>&1 &
+          ssh -o StrictHostKeyChecking=no -T -R 80:localhost:2222 nokey@localhost.run > ssh.log 2>&1 &
+          ssh -o StrictHostKeyChecking=no -T -R 80:localhost:3389 nokey@localhost.run > rdp.log 2>&1 &
           
-          # Tünelleri başlat (Avrupa Sunucusu)
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:5901 tcp@eu.pinggy.io > vnc.log 2>&1 &
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:2222 tcp@eu.pinggy.io > ssh.log 2>&1 &
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:3389 tcp@eu.pinggy.io > rdp.log 2>&1 &
-          
-          echo "Siber köprüler kuruluyor, 30 saniye sabret Kral..."
+          echo "Siber otoban inşa ediliyor, 30 saniye bekle..."
           sleep 30
           
           echo "================================================================"
-          echo "🚀 RDP (UZAK MASAÜSTÜ) BİLGİSİ:"
-          # Önce linki ara, bulamazsan tüm dosyayı bas
-          if grep -q "tcp://" rdp.log; then
-            grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' rdp.log
-          else
-            echo "⚠️ Link henüz oluşmadı, ham log aşağıda:"
-            cat rdp.log
-          fi
+          echo "🚀 UZAK MASAÜSTÜ (RDP) ADRESİ:"
+          grep -oE '[a-zA-Z0-9.-]+\.lhr\.life' rdp.log | head -n 1 || cat rdp.log
           
           echo "----------------------------------------------------------------"
-          echo "💀 KALI SSH BİLGİSİ:"
-          if grep -q "tcp://" ssh.log; then
-            grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' ssh.log
-          else
-            cat ssh.log
-          fi
+          echo "💀 KALI SSH ADRESİ:"
+          grep -oE '[a-zA-Z0-9.-]+\.lhr\.life' ssh.log | head -n 1 || cat ssh.log
           
           echo "----------------------------------------------------------------"
-          echo "🖥️ VNC BİLGİSİ:"
-          if grep -q "tcp://" vnc.log; then
-            grep -oE 'tcp://[a-zA-Z0-9.-]+:[0-9]+' vnc.log
-          else
-            cat vnc.log
-          fi
+          echo "🖥️ VNC ADRESİ (Eğer RDP hemen açılmazsa tıkla):"
+          grep -oE '[a-zA-Z0-9.-]+\.lhr\.life' vnc.log | head -n 1 || cat vnc.log
           echo "================================================================"
           echo "Kullanıcı: Kral | Şifre: kral123"
           echo "================================================================"
