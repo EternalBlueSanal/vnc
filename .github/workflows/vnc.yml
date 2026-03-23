@@ -14,24 +14,27 @@ jobs:
           wget -q https://github.com/ekzhang/bore/releases/download/v0.4.1/bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
           tar -xzf bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
 
-      - name: 2. Kurbanı Drive'dan İndir (Gdown Temiz İndirme)
+      - name: 2. Kurbanı Kendi Üssümüzden İndir (Aria2 Turbo Mod)
         run: |
-          # Önceki denemeden kalan 2KB'lık sahte dosyayı yok ediyoruz
+          # Eski kalıntıları temizle
           rm -f kurban_disk.qcow2
           
-          # Gdown'ı kuruyoruz
-          sudo pip3 install gdown --upgrade
+          # Aria2'yi kuruyoruz (Paralel İndirme Canavarı)
+          sudo apt-get install aria2 -y -qq
           
-          # YENİ DOSYA ID'Sİ (İzinlerin açık olduğundan emin ol!)
-          gdown --id "1eKZQu8NEMgP5TsGlbpFX9Ub1l_xrgvOh" -O kurban_disk.qcow2
+          # 16 Koldan saldırı! 
+          # -x 16 : 16 bağlantı açar
+          # -s 16 : Dosyayı 16 parçaya böler
+          # --summary-interval=10 : Her 10 saniyede bir hız raporu verir
+          aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=10 -d . -o kurban_disk.qcow2 "https://columnists-unlock-dispatch-handles.trycloudflare.com/win7.qcow2"
           
-          # İnen dosyanın gerçek olup olmadığını siber kontrolle teyit ediyoruz (Min 100MB olmalı)
+          # Dosyanın tam indiğini teyit edelim
           FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
           if [ $FILE_SIZE -lt 100000000 ]; then
-            echo "❌ HATA: Dosya yine çok küçük indi! Drive'da 'Bağlantıya sahip olan herkes' iznini açmayı unuttun Kral!"
+            echo "❌ HATA: Dosya tam inmedi! Evdeki Python veya Cloudflare sunucusu kapanmış olabilir."
             exit 1
           fi
-          echo "✅ Ganimet başarıyla indirildi! Disk boyutu uygun."
+          echo "✅ Ganimet Aria2 gücüyle kendi makinemizden şak diye çekildi!"
           
       - name: 3. Windows 7'yi (Kurban) Ateşle
         run: |
