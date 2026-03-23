@@ -13,6 +13,7 @@ jobs:
           # Bore'u indiriyoruz (TCP Tünel Kralı)
           wget -q https://github.com/ekzhang/bore/releases/download/v0.4.1/bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
           tar -xzf bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
+          sudo pip3 install gdown
 
       - name: 2. Hazır Kurbanı Drive'dan İndir (Kurulum Yok!)
 
