@@ -52,30 +52,36 @@ jobs:
           
       - name: 4. Kali Linux'u (Saldırgan) Kur ve SSH'ı Hazırla
         run: |
-          # Kali Docker konteynerini başlatıyoruz (İsim düzeltildi: kali_saldirgan)
+          # Kali Docker konteynerini başlatıyoruz
           docker run -d --net=host --name kali_saldirgan kalilinux/kali-rolling sleep infinity
           
           # SSH ve sızma araçlarının kurulumu
           docker exec kali_saldirgan apt-get update -y
           docker exec kali_saldirgan apt-get install -y openssh-server metasploit-framework iproute2
           
-          # SSH yapılandırması (User: root, Şifre: kral123)
+          # SSH ayarları ve Şifre (root:kral123)
           docker exec kali_saldirgan mkdir -p /run/sshd
           docker exec kali_saldirgan bash -c "echo 'root:kral123' | chpasswd"
-          docker exec kali_saldirgan sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+          
+          # KRİTİK NOKTA: Çakışmayı önlemek için Kali'nin portunu 2222 yapıyoruz
+          docker exec kali_saldirgan bash -c "echo 'Port 2222' >> /etc/ssh/sshd_config"
+          docker exec kali_saldirgan bash -c "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config"
+          docker exec kali_saldirgan bash -c "echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config"
+          
+          # Kali SSH servisini başlat
           docker exec kali_saldirgan service ssh start
 
       - name: 5. Siber Köprüleri (Bore Tünelleri) Başlat
         run: |
-          # 1. Tünel: Win7 Ekranı (VNC)
+          # 1. Tünel: Win7 Ekranı (VNC) - Port 5901
           ./bore local 5901 --to bore.pub > vnc_bore.log 2>&1 &
           
-          # 2. Tünel: Kali Komut Satırı (SSH)
-          ./bore local 22 --to bore.pub > ssh_bore.log 2>&1 &
+          # 2. Tünel: Kali Komut Satırı (SSH) - ARTIK PORT 2222 TÜNELLENİYOR
+          ./bore local 2222 --to bore.pub > ssh_bore.log 2>&1 &
           
           sleep 20
           echo "================================================================"
-          echo "🔥 SİBER DÜELLO ALANI YENİ HEDEFLE HAZIR!"
+          echo "🔥 SİBER DÜELLO ALANI ÇATIŞMASIZ HAZIR!"
           
           VNC_ADDR=$(grep -oE 'bore\.pub:[0-9]+' vnc_bore.log | head -n 1)
           echo "🖥️ WIN7 EKRANI (VNC Viewer ile): ${VNC_ADDR}"
@@ -88,7 +94,7 @@ jobs:
           echo "----------------------------------------------------------------"
           echo "🎯 KALI İÇİNDEN SALDIRI HEDEFİ: 127.0.0.1:4445"
           echo "================================================================"
-
+          
       - name: 6. Operasyonu Hayatta Tut
         run: |
           while true; do sleep 300; echo "Sistem uçuşta, kurban tetikte..."; done
