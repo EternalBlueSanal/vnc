@@ -15,13 +15,10 @@ jobs:
           wget -q https://github.com/ekzhang/bore/releases/download/v0.4.1/bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
           tar -xzf bore-v0.4.1-x86_64-unknown-linux-musl.tar.gz
 
-      - name: 2. Hazır Kurbanı Drive'dan İndir (Siber Bypass)
+      - name: 2. Hazır Kurbanı Drive'dan İndir (Kurulum Yok!)
         run: |
-          # Bu komut Google'ın "dosya çok büyük" uyarısını simüle ederek aşar
-          FILE_ID="14PZmQ-yUlfNWo8djcjzxuBOH0nxo6Ms5"
-          curl -L -c cookies.txt 'https://docs.google.com/uc?export=download&id='${FILE_ID} | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1/p' > confirm.txt
-          curl -L -b cookies.txt 'https://docs.google.com/uc?export=download&confirm='$(cat confirm.txt)'&id='${FILE_ID} -o kurban_disk.qcow2
-          rm cookies.txt confirm.txt
+          # Gdown, Google'ın "bu dosya büyük, virüs taraması yapılamıyor" uyarısını otomatik aşar.
+          gdown --id "1xz4LdlcVc5l_Cxh93YLYgBYE-mzweont" -O kurban_disk.qcow2
           
       - name: 3. Turbo Motorları Ateşle
         run: |
