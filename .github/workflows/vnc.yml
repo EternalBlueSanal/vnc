@@ -15,7 +15,7 @@ jobs:
         run: |
           rm -f kurban_disk.qcow2
           sudo apt-get install aria2 -y -qq
-          aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=10 -d . -o kurban_disk.qcow2 "https://generation-adapter-writes-seek.trycloudflare.com/win7.qcow2"
+          aria2c -x 16 -s 16 -k 1M --console-log-level=warn --summary-interval=10 -d . -o kurban_disk.qcow2 "https://detective-gardening-european-asia.trycloudflare.com/win7.qcow2"
           
           FILE_SIZE=$(stat -c%s "kurban_disk.qcow2")
           if [ $FILE_SIZE -lt 100000000 ]; then
