@@ -26,15 +26,20 @@ jobs:
 
           # Lisans anahtarını kullanarak kayıt ol ve bağlan
           echo "🔑 Lisans anahtarı tanımlanıyor..."
-          warp-cli --accept-tos registration new
-          warp-cli --accept-tos registration set-license Cd7Mr916-9D501keO-5G13l6La
+          warp-cli --accept-tos registration new || echo "Zaten kayıtlı, devam ediliyor..."
           
-          # WARP Modunu Ayarla (Full Tunnel için 'warp')
+          # Düzeltilen Kısım: 'set-license' yerine 'license'
+          warp-cli --accept-tos registration license Cd7Mr916-9D501keO-5G13l6La
+          
+          # WARP Modunu Ayarla ve Bağlan
           warp-cli --accept-tos mode warp
           warp-cli --accept-tos connect
           
           echo "⏳ Bağlantı bekleniyor..."
           sleep 10
+          
+          # Bağlantı durumunu kontrol et
+          warp-cli --accept-tos status
           
           echo "🌐 Yeni Kimlik ve IPv6 Durumu:"
           curl -6 -s https://ifconfig.ma/ || echo "⚠️ IPv6 adresi alınamadı!"
